@@ -1,0 +1,6 @@
+id,gen,smile,source,score,weight
+AAAE,0,CN(C)C(=O)C1CCCN(C(=O)Cc2cn(-c3ccccc3)nn2)C1,generated,-7.6,341.415
+AAAD,0,NC(=O)c1ccc(Nc2ccc(CN3CCNCC3)c(F)c2)c(F)c1,generated,-7.2,346.38100000000003
+AAAC,0,CC(C)n1nccc1NC(=O)c1cc(-c2ccccc2)[nH]n1,generated,-7.0,295.34599999999995
+AAAA,0,COc1ccc(-c2nnc(CCC(=O)Nc3ccccc3)n2C)cc1,generated,-6.9,336.39500000000004
+AAAB,0,CCN(C(=O)CN1CCOCC1)c1ccc2c(c1)CCCC2,generated,-6.3,302.4180000000001

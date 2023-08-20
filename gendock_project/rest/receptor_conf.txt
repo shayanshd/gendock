@@ -1,0 +1,8 @@
+receptor = /home/shayan/Documents/dockgui/6lu7.pdbqt
+center_x = -11.493
+center_y = 10.857
+center_z = 62.522
+size_x = 30
+size_y = 30
+size_z = 30
+exhaustiveness = 8

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Get references to the HTML elements
+                var browse1Button = document.getElementById('browse1');
+                var browse2Button = document.getElementById('browse2');
+                var fileName1Input = document.getElementById('fileName1');
+                var fileName2Input = document.getElementById('fileName2');
+                
+                // Define the functions to handle the file browsing events
+                browse1Button.addEventListener('click', function() {
+                    // Open the file browsing dialog
+                    var fileInput = document.createElement('input');
+                    fileInput.type = 'file';
+                    fileInput.accept = '.csv';
+                    fileInput.addEventListener('change', function() {
+                        fileName1Input.value = fileInput.value;
+                    });
+                    fileInput.click();
+                });
+                
+                browse2Button.addEventListener('click', function() {
+                    // Open the file browsing dialog
+                    var fileInput = document.createElement('input');
+                    fileInput.type = 'file';
+                    fileInput.accept = '.csv';
+                    fileInput.addEventListener('change', function() {
+                        fileName2Input.value = fileInput.value;
+                    });
+                    fileInput.click();
+                });
+                
+                // Define the function to handle the "Prepare Data" button click event
+                var prepButton = document.getElementById('prep');
+                prepButton.addEventListener('click', function() {
+                    // Get the values from the inputs
+                    var fileName1 = fileName1Input.value;
+                    var fileName2 = fileName2Input.value;
+                    
+                    // Send an AJAX request to the Django server
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/prepare-data/');
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+                    
+                    // Define the data to send in the request body
+                    var data = JSON.stringify({
+                        'fileName1': fileName1,
+                        'fileName2': fileName2
+                    });
+                    
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === XMLHttpRequest.DONE) {
+                            if (xhr.status === 200) {
+                                // Handle the response from the Django server if needed
+                                console.log(xhr.responseText);
+                            } else {
+                                // Handle any errors or failed requests
+                                console.error('Request failed with status:', xhr.status);
+                            }
+                        }
+                    };
+                    
+                    // Send the request with the data
+                    xhr.send(data);
+                });
+            });
+        </script>
+        <title>Dialog</title>
+        <style>
+            .container {
+                width: 400px;
+                height: 600px;
+            }
+            .textarea {
+                width: 380px;
+                height: 380px;
+            }
+            .button {
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <textarea class="textarea"></textarea>
+            <div id="tabWidget">
+                <div id="prepare_and_train_tab">
+                    <h2>Prepare and Train</h2>
+                    <div>
+                        <input type="checkbox" id="cb1" checked>
+                        <label for="cb1">Dataset 1</label>
+                        <input type="text" id="fileName1">
+                        <button id="browse1">Browse</button>
+                    </div>
+                    <button id="trainButton" class="button" disabled>Train</button>
+                    <div>
+                        <input type="checkbox" id="cb2">
+                        <label for="cb2">Dataset 2</label>
+                        <input type="text" id="fileName2" disabled>
+                        <button id="browse2" class="button" disabled>Browse</button>
+                    </div>
+                    <button id="prep">Prepare Data</button>
+                </div>
+                <div id="generation_tab">
+                    <h2>Generation</h2>
+                    <button id="init_gen">Initial Generation</button>
+                    <button id="init_dock" class="button">Initial docking</button>
+                    <label for="init_sample_number">Sample Number</label>
+                    <input type="text" id="init_sample_number">
+                    <label for="init_desired_num">Desired Length</label>
+                    <input type="text" id="init_desired_num">
+                    <label for="gennum">Generation Number</label>
+                    <button id="next_gen" class="button">Next Generation</button>
+                    <button id="next_dock" class="button">Start Docking</button>
+                    <button id="stop_btn">Stop 🛑</button>
+                    <input type="number" id="gennum">
+                    <button id="rec_conf_btn">Receptor Configuration</button>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

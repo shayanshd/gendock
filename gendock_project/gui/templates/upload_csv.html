@@ -1,0 +1,28 @@
+<!-- csv_processor/templates/upload_csv.html -->
+{% extends 'base.html' %}
+
+{% block title %}Upload CSV{% endblock %}
+
+{% block content %}
+    <form action="{% url 'upload' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="csv_file" class="border p-2 mb-4" accept=".csv" id="csv-file-input">
+        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Upload CSV</button>
+        <script>
+            const csvFileInput = document.getElementById('csv-file-input');
+            csvFileInput.addEventListener('change', () => {
+                const allowedExtensions = ['.csv'];
+                const fileExtension = csvFileInput.value.slice(csvFileInput.value.lastIndexOf('.'));
+                if (!allowedExtensions.includes(fileExtension)) {
+                    alert('Please select a CSV file.');
+                    csvFileInput.value = ''; // Clear the input
+                }
+            });
+        </script>
+
+
+    </form>
+    {% if error_message %}
+        <p class="text-red-500 mt-2">{{ error_message }}</p>
+    {% endif %}
+{% endblock %}

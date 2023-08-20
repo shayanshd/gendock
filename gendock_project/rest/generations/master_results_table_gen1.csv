@@ -1,0 +1,16 @@
+id,gen,smile,source,score,weight
+AAAI,0,Cc1ccccc1-c1noc2nc(C)c(C(=O)Nc3ccccc3)cc12,generated,-7.8,343.386
+AAAB,0,Cc1ccc(C(=O)N2CCN(Cc3noc(-c4cccs4)n3)CC2)cn1,generated,-7.4,369.4500000000001
+AAAG,0,C#CCN(C(=O)c1ccc(N2CCOC2=O)cc1)S(C)(=O)=O,generated,-7.2,322.342
+AAAF,0,Cc1cc(CN(C)C(=O)c2nnn(-c3ccccn3)n2)no1,generated,-7.1,299.29400000000004
+AAAJ,0,Cc1cc(C(=O)NCC(=O)N2CCCC2)c(C)n1C1CC1,generated,-7.1,289.379
+AAAE,0,Cc1ccccc1-c1nnc(SCC(=O)N2CCCCC2)n1C,generated,-7.0,330.45700000000016
+AAAC,0,CCOC(=O)Cc1cc(NC(=O)c2cccc(OC)c2)ccc1Cl,generated,-6.9,347.798
+AAAD,0,COC(=O)c1ccc(-n2nnc3cc(C)c(C#N)cc32)cc1,generated,-6.9,292.298
+AAAA,0,Cn1nc(-c2ccccc2)nc1CN1CCN(C(=O)C2CC2)CC1,generated,-6.7,325.4160000000001
+AAAH,0,CN(C)C(=O)c1cccc(NC(=O)Cc2ccc(F)cc2)n1,generated,-6.6,301.321
+AAAA,1,CC(C)(C)n1nccc1C(=O)Nc1ccc(N2CCOC2=O)cc1,generated,99.9,
+AAAB,1,Cc1cc(CN(C)C(=O)c2ccc(NC(=O)C(C)(C)C)cc2)no1,generated,99.9,
+AAAC,1,CCOC(=O)c1ccc(-n2nnc3cc(C)c(C#N)cc32)cc1,generated,99.9,
+AAAD,1,CCCc1ccc(N2CCN(Cc3noc(-c4cccs4)n3)CC2)nn1,generated,99.9,
+AAAE,1,Cc1cc(C(=O)NCC(=O)N2CCCC2)c(C)n1C1CC1,generated,99.9,
