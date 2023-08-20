@@ -4,21 +4,5 @@
 {% block title %}CSV List{% endblock %}
 
 {% block content %}
-    <h1>Uploaded CSV Files</h1>
-    <ul class="mt-4">
-        {% for uploaded_csv in uploaded_csv_list %}
-            <li class="mb-2">
-                {{ uploaded_csv.csv_file.name }}
-                <form method="post" action="{% url 'process_csv' uploaded_csv.pk %}" class="inline">
-                    {% csrf_token %}
-                    <button type="submit" class="text-blue-500">Process</button>
-                </form>
-                <form method="post" action="{% url 'csv_list' %}" class="inline ml-2">
-                    {% csrf_token %}
-                    <input type="hidden" name="delete_csv" value="{{ uploaded_csv.pk }}">
-                    <button type="submit" class="text-red-500">Delete</button>
-                </form>
-            </li>
-        {% endfor %}
-    </ul>
+
 {% endblock %}

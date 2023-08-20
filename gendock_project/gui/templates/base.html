@@ -10,9 +10,10 @@
     <nav class="bg-blue-500 py-4 mb-8">
         <ul class="flex space-x-4 px-8">
             <li><a href="{% url 'upload' %}" class="text-white">Upload CSV</a></li>
-            <li><a href="{% url 'csv_list' %}" class="text-white">CSV List</a></li>
         </ul>
     </nav>
+    <script src="https://unpkg.com/htmx.org@1.7.0"></script>
     {% block content %}{% endblock %}
 </body>
 </html>
+

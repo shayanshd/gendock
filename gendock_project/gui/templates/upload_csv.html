@@ -1,28 +1,58 @@
-<!-- csv_processor/templates/upload_csv.html -->
 {% extends 'base.html' %}
 
 {% block title %}Upload CSV{% endblock %}
 
 {% block content %}
-    <form action="{% url 'upload' %}" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <input type="file" name="csv_file" class="border p-2 mb-4" accept=".csv" id="csv-file-input">
-        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Upload CSV</button>
-        <script>
-            const csvFileInput = document.getElementById('csv-file-input');
-            csvFileInput.addEventListener('change', () => {
-                const allowedExtensions = ['.csv'];
-                const fileExtension = csvFileInput.value.slice(csvFileInput.value.lastIndexOf('.'));
-                if (!allowedExtensions.includes(fileExtension)) {
-                    alert('Please select a CSV file.');
-                    csvFileInput.value = ''; // Clear the input
-                }
-            });
-        </script>
+<div class="container mx-auto py-8">
+    <h1 class="text-3xl font-semibold mb-6">Upload CSV Files</h1>
 
+    <div class="mb-6">
+        <form action="{% url 'upload' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label class="block text-gray-700 font-semibold mb-2">Select CSV file:</label>
+            <div class="flex items-center">
+                <input type="file" name="csv_file" class="py-2 px-4 border rounded-lg mr-4" accept=".csv" id="csv-file-input">
+                <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg">Upload CSV</button>
+            </div>
+        </form>
+        {% if error_message %}
+            <p class="text-red-500 mt-2">{{ error_message }}</p>
+        {% endif %}
+    </div>
 
-    </form>
-    {% if error_message %}
-        <p class="text-red-500 mt-2">{{ error_message }}</p>
-    {% endif %}
+    <h2 class="text-lg font-semibold mb-4">Uploaded CSV Files</h2>
+    <ul>
+        {% for uploaded_csv in uploaded_csv_list %}
+            <li class="mb-3 border-t pt-3 flex justify-between items-center">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    <span>{{ uploaded_csv.csv_file.name }}</span>
+                </div>
+                <div class="flex">
+                    <div id="results-section">
+                        <button class="button is-primary" hx-get="{% url 'process_csv' uploaded_csv.pk %}" hx-target="#results-section">Generate</button>
+                    
+                    </div>
+                    <form method="post" action="{% url 'upload' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="delete_csv" value="{{ uploaded_csv.pk }}">
+                        <button type="submit" class="px-2 py-1 text-red-500 hover:text-red-700">Delete</button>
+                    </form>
+                </div>
+            </li>
+        {% endfor %}
+
+    </ul>
+</div>
+<script>
+    const csvFileInput = document.getElementById('csv-file-input');
+    csvFileInput.addEventListener('change', () => {
+        const allowedExtensions = ['.csv'];
+        const fileExtension = csvFileInput.value.slice(csvFileInput.value.lastIndexOf('.'));
+        if (!allowedExtensions.includes(fileExtension)) {
+            alert('Please select a CSV file.');
+            csvFileInput.value = ''; // Clear the input
+        }
+    });
+</script>
 {% endblock %}
