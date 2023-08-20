@@ -7,17 +7,12 @@ from .tasks import process_csv_task
 
 
 class ProcessCSVView(View):
-    template_name = 'process_csv.html'
-
     def post(self, request, pk):
         uploaded_csv = UploadedCSV.objects.get(pk=pk)
         csv_path = uploaded_csv.csv_file.path
         task = process_csv_task.delay(csv_path,pk)
         uploaded_csv.task_id = task.task_id
         uploaded_csv.save()
-        print('the tawsks',task)
-
-
         return render(request, 'process_csv.html', context={'task_id': task.task_id})
 
 
