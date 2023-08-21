@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container mx-auto py-8">
-    <h1 class="text-3xl font-semibold mb-6">Upload CSV Files</h1>
+    <h1 class="text-3xl font-semibold mb-6">Upload and Process CSV Files</h1>
 
     <div class="mb-6">
         <form action="{% url 'upload' %}" method="post" enctype="multipart/form-data">
@@ -21,38 +21,24 @@
     </div>
 
     <h2 class="text-lg font-semibold mb-4">Uploaded CSV Files</h2>
-    <ul>
-        {% for uploaded_csv in uploaded_csv_list %}
-            <li class="mb-3 border-t pt-3 flex justify-between items-center">
-                <div class="flex items-center">
-                    <svg class="w-6 h-6 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                    <span>{{ uploaded_csv.csv_file.name }}</span>
-                </div>
-                <div class="flex">
-                    <div id="results-section">
-                        <button class="button is-primary" hx-get="{% url 'process_csv' uploaded_csv.pk %}" hx-target="#results-section">Generate</button>
-                    
-                    </div>
-                    <form method="post" action="{% url 'upload' %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="delete_csv" value="{{ uploaded_csv.pk }}">
-                        <button type="submit" class="px-2 py-1 text-red-500 hover:text-red-700">Delete</button>
-                    </form>
-                </div>
-            </li>
-        {% endfor %}
+    <form hx-post="{% url 'process_csv' %}" hx-target="#selected-csvs">
+        {% csrf_token %}
+        <ul id="selected-csvs">
+            {% for uploaded_csv in uploaded_csv_list %}
+                <li class="mb-3 border-t pt-3 flex justify-between items-center">
 
-    </ul>
+                    <div class="flex items-center">
+                        <input type="checkbox" name="selected_csvs" value="{{ uploaded_csv.pk }}" class="mr-2">
+                        <span>{{ uploaded_csv.csv_file.name }}</span>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+        <div class="flex mt-4">
+            <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-lg mr-4">Process Selected</button>
+            <button class="px-4 py-2 bg-red-500 text-white rounded-lg" hx-post="{% url 'upload' %}" hx-target="#selected-csvs">Delete Selected</button>
+        </div>
+    </form>
 </div>
-<script>
-    const csvFileInput = document.getElementById('csv-file-input');
-    csvFileInput.addEventListener('change', () => {
-        const allowedExtensions = ['.csv'];
-        const fileExtension = csvFileInput.value.slice(csvFileInput.value.lastIndexOf('.'));
-        if (!allowedExtensions.includes(fileExtension)) {
-            alert('Please select a CSV file.');
-            csvFileInput.value = ''; // Clear the input
-        }
-    });
-</script>
+
 {% endblock %}

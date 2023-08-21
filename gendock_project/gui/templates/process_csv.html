@@ -7,7 +7,7 @@
 </head>
 <body class="bg-gray-100">
 
-<div class="relative pt-1" hx-get="{% url 'get_progress' task_id %}" hx-target="#results-section" hx-trigger="load delay:300ms">
+<div class="relative pt-1" hx-get="{% url 'get_progress' task_id %}" hx-target="#selected-csvs" hx-trigger="load delay:300ms">
     <div class="flex mb-2 items-center justify-between">
         <div>
             <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-teal-600 bg-teal-200">

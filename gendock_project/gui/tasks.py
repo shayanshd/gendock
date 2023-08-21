@@ -12,25 +12,37 @@ RDLogger.DisableLog('rdApp.*')
 
 
 @shared_task(bind=True)
-def process_csv_task(self, csv_path, pk):
-    uploaded_csv = UploadedCSV.objects.get(pk=pk)
+def process_csv_task(self, pk_list):
+    csv_path = []
+    pk_names = ''
+    for pk in pk_list:
+        uploaded_csv = UploadedCSV.objects.get(pk=pk)
+        csv_path.append(uploaded_csv.csv_file.path)
+        pk_names = pk_names + '_' +str(pk)
+    print(pk_names)
+
+    # uploaded_csv = UploadedCSV.objects.get(pk=pk)
     print("Task started")
+    # print(uploaded_csv.csv_file)
     progress_recorder = ProgressRecorder(self)
+    total_smiles = []
+    for path in csv_path:
+        dataset1 = pd.read_csv(path, sep=',')
+        try:
+            dataset1 = dataset1[dataset1['smiles'].notnull()]
+        except (ValueError, Exception) as e:
+            return "Please set the column header name as 'smiles' in Dataset 1."
+        print(f'total smiles in dataset {path}: ' + str(dataset1.shape[0]))
+        dataset1['smiles'] = dataset1["smiles"]
+        dataset1['length'] = dataset1["smiles"].str.len()
 
-    dataset1 = pd.read_csv(csv_path, sep=',')
-    try:
-        dataset1 = dataset1[dataset1['smiles'].notnull()]
-    except (ValueError, Exception) as e:
-        print("Please set the column header name as 'smiles' in Dataset 1.")
-        return True
+        smiles = dataset1.drop_duplicates()["smiles"].tolist()
+        total_smiles.extend(smiles)
+        print(len(smiles))
+    total_smiles = list(set(total_smiles))
 
-    dataset1['smiles'] = dataset1["smiles"]
-    dataset1['length'] = dataset1["smiles"].str.len()
-
-    smiles = dataset1.drop_duplicates()["smiles"].tolist()
-
-    print('total smiles in dataset 1: ' + str(dataset1.shape[0]))
-    print('total number of smiles: ' + str(len(smiles)))
+    
+    print('total number of smiles: ' + str(len(total_smiles)))
 
     normarizer = MolStandardize.normalize.Normalizer()
     lfc = MolStandardize.fragment.LargestFragmentChooser()
@@ -49,12 +61,12 @@ def process_csv_task(self, csv_path, pk):
 
     cl_smiles = []
 
-    for i, smi in enumerate(smiles):
+    for i, smi in enumerate(total_smiles):
         cl_smi = process(smi)
         if cl_smi:
             cl_smiles.append(cl_smi)
         if (i + 1) % 100 == 0:
-            progress_recorder.set_progress(i + 1, len(smiles))
+            progress_recorder.set_progress(i + 1, len(total_smiles))
 
     print('done.')
     print(f'output SMILES num: {len(cl_smiles)}')
@@ -62,12 +74,13 @@ def process_csv_task(self, csv_path, pk):
     cleaned_smiles_dir = './cleaned_smiles'
     os.makedirs(cleaned_smiles_dir, exist_ok=True)
 
-    cleaned_smiles_file = os.path.join(cleaned_smiles_dir, os.path.basename(csv_path).replace('.csv', '_clean.smi'))
+    cleaned_smiles_file = os.path.join(cleaned_smiles_dir, pk_names+'_clean.smi')
 
     with open(cleaned_smiles_file, 'w') as f:
         for smi in cl_smiles:
             f.write(smi + '\n')
-    
-    uploaded_csv.cleaned_smiles_file = cleaned_smiles_file  # Set the cleaned_smiles_path
-    uploaded_csv.save()
+    for pk in pk_list:
+        uploaded_csv = UploadedCSV.objects.get(pk=pk)
+        uploaded_csv.cleaned_smiles_file = cleaned_smiles_file  # Set the cleaned_smiles_path
+        uploaded_csv.save()
     return cleaned_smiles_file
