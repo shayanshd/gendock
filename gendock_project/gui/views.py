@@ -7,7 +7,7 @@ from .tasks import process_csv_task
 from celery.result import AsyncResult
 from celery_progress.backend import Progress
 from django.http import HttpResponse
-
+from celery.app import default_app
 
 class ProcessCSVView(View):
     def post(self, request):      
@@ -22,25 +22,31 @@ class GetProgress(View):
     def get(self, request, task_id):
         progress = Progress(AsyncResult(task_id)) 
         percent_complete = int(progress.get_info()['progress']['percent'])
+            
         if percent_complete == 100:
-            # results = UploadedCSV.objects.get(task_id=task_id)
-            print('Done')
-            return render(request, 'csv_list.html')
+            uploaded_csv_list = UploadedCSV.objects.all()
+            context = {'uploaded_csv_list': uploaded_csv_list}
+            return render(request, 'csv_list.html', context=context)
         
         context = {'task_id':task_id, 'value': percent_complete}
         return render(request, 'process_csv.html',context=context)
-
+    
+    def post(self, request, task_id):
+        print(request.POST)
+        default_app.control.revoke(task_id, terminate=True, signal='SIGKILL')
+        return HttpResponse('Stopped')
+            
+        
 
 class UploadCSVView(View):
     def get(self, request):
         uploaded_csv_list = UploadedCSV.objects.all()
-        return render(request, 'upload_csv.html', {'uploaded_csv_list': uploaded_csv_list})
+        context = {'uploaded_csv_list': uploaded_csv_list}
+        return render(request, 'upload_csv.html', context=context)
     
     def post(self, request):
-        print(request.POST)
         csv_id_to_delete = request.POST.getlist('selected_csvs')
         csv_file = request.FILES.get('csv_file')
-        print(csv_file)
         if csv_file:
             if csv_file.name.endswith('.csv'):
                 UploadedCSV.objects.create(csv_file=csv_file)
@@ -61,11 +67,8 @@ class UploadCSVView(View):
 
                 # Delete the UploadedCSV object
                 uploaded_csv.delete()
-        return render(request,'csv_list.html')
+            uploaded_csv_list = UploadedCSV.objects.all()
+            context = {'uploaded_csv_list': uploaded_csv_list}
+            return render(request,'csv_list.html', context=context)
+        return redirect('upload')
     
-def delete_csv(request):
-    print(request.DELETE)
-
-        
-
-

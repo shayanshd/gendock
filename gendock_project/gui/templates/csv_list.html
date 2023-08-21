@@ -1,13 +1,16 @@
-
-<ul id="selected-csvs">
+<ul>
     {% for uploaded_csv in uploaded_csv_list %}
-        <li class="mb-3 border-t pt-3 flex justify-between items-center">
+    <li class="mb-3 border-t pt-3 flex justify-between items-center">
 
-            <div class="flex items-center">
-                <input type="checkbox" name="selected_csvs" value="{{ uploaded_csv.pk }}" class="mr-2">
-                <span>{{ uploaded_csv.csv_file.name }}</span>
-            </div>
-        </li>
+        <div class="flex items-center">
+            <input type="checkbox" name="selected_csvs" value="{{ uploaded_csv.pk }}" class="mr-2">
+            <span>{{ uploaded_csv.csv_file.name }}</span>
+        </div>
+    </li>
     {% endfor %}
+    <div class="flex mt-4" id="buttons-section" style="display: none;">
+        <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-lg mr-4">Process Selected</button>
+        <button class="px-4 py-2 bg-red-500 text-white rounded-lg" hx-post="{% url 'upload' %}"
+            hx-target="#selected-csvs">Delete Selected</button>
+    </div>
 </ul>
-<div class="flex mt-4">

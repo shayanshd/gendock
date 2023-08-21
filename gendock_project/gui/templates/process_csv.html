@@ -1,28 +1,37 @@
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CSV Processing</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.15/dist/tailwind.min.css" rel="stylesheet">
 </head>
+
 <body class="bg-gray-100">
 
-<div class="relative pt-1" hx-get="{% url 'get_progress' task_id %}" hx-target="#selected-csvs" hx-trigger="load delay:300ms">
-    <div class="flex mb-2 items-center justify-between">
-        <div>
-            <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-teal-600 bg-teal-200">
-                Progress ID
-            </span>
+    <div class="relative pt-1" hx-get="{% url 'get_progress' task_id %}" hx-target="#selected-csvs"
+        hx-trigger="load delay:300ms">
+        <div class="flex mb-2 items-center justify-between">
+            <div>
+                <span
+                    class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-teal-600 bg-teal-200">
+                    Progress ID
+                </span>
+            </div>
+            <div class="text-right">
+                <span class="text-xs font-semibold inline-block text-teal-600">
+                    {{ task_id }}
+                </span>
+            </div>
         </div>
-        <div class="text-right">
-            <span class="text-xs font-semibold inline-block text-teal-600">
-                {{ task_id }}
-            </span>
+        <div class="mb-6 h-1 w-full bg-neutral-200 dark:bg-neutral-600">
+            <div id="progress-bar" class="h-1 bg-green-500" style="width: {{value}}%;"></div>
         </div>
+        <button id="cancel-task" class="px-4 py-2 bg-red-500 text-white rounded-lg"
+            hx-post="{% url 'get_progress' task_id %}" hx-target="#selected-csvs">Cancel Task</button>
     </div>
-    <div class="mb-6 h-1 w-full bg-neutral-200 dark:bg-neutral-600">
-        <div id="progress-bar" class="h-1 bg-green-500" style="width: {{value}}%;" ></div>
-      </div>
-</div>
 
-<div id="progress-bar-message">Waiting for progress to start...</div>
+</body>
+
+</html>
