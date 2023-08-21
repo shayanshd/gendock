@@ -84,3 +84,4 @@ def process_csv_task(self, pk_list):
         uploaded_csv.cleaned_smiles_file = cleaned_smiles_file  # Set the cleaned_smiles_path
         uploaded_csv.save()
     return cleaned_smiles_file
+
