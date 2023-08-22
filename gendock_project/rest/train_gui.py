@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 from copy import copy
 from rdkit import RDLogger, Chem, DataStructs
+from rdkit.Chem import Descriptors, PropertyMol
 from lstm_chem.utils.config import process_config
 from lstm_chem.model import LSTMChem
 from lstm_chem.generator import LSTMChemGenerator
@@ -108,7 +109,7 @@ class IGWorker(QObject):
     def IGW(self):
         CONFIG_FILE = 'experiments/LSTM_Chem/config.json'
         config = process_config(CONFIG_FILE)
-        config['model_weight_filename'] = 'experiments/LSTM_Chem/checkpoints/LSTM_Chem-23-0.21.hdf5'
+        # config['model_weight_filename'] = 'experiments/LSTM_Chem/checkpoints/LSTM_Chem-23-0.21.hdf5'
         # print(config)
 
         modeler = LSTMChem(config, session='generate')
@@ -160,7 +161,7 @@ class IGWorker(QObject):
         # print(len(gen0))
         gen0_mols = GenProcess.validate_mols(gen0)
         # print(len(gen0_mols))
-
+        print('here')
         gen0_mols = GenProcess.initialize_generation_from_mols(gen0_mols, self.desired_length)
         # print(len(gen0_mols))\
         check_master_exits = os.path.exists('./generations/master_results_table.csv')

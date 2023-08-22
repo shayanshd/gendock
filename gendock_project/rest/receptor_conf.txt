@@ -1,4 +1,4 @@
-receptor = /home/shayan/Documents/dockgui/6lu7.pdbqt
+receptor = /home/shayan/LSTM_Chem/6lu7.pdbqt
 center_x = -11.493
 center_y = 10.857
 center_z = 62.522

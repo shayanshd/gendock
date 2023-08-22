@@ -1,150 +1,161 @@
-# Deep Learning Coronavirus Cure
-
-This is an original submission to the Coronavirus Deep Learning Competition hosted by [Sage Health](https://www.sage-health.org/). The goal is to create a novel small molecule which can bind with the coronavirus, using deep learning techniques for molecule generation and [PyRx](https://pyrx.sourceforge.io/home) to evaluate binding affinities.
-
-Binding scores of leading existing drugs (HIV inhibitors) are around -10 to -11 (the more negative the score the better), and around -13 for the drug Remdesivir which recently entered clinical testing.
-
-By combining a generative RNN model with techniques and principles from transfer learning and genetic algorithms, I was able to create several small molecule candidates which achieved binding scores approaching -18.
-
-## Acknowledgements
-
-This repo began as a clone of [Topazape's](https://github.com/topazape/LSTM_Chem) repo which implements the paper [Generative Recurrent Networks for De Novo Drug Design](https://doi.org/10.1002/minf.201700111).
-
-I also used [PyRx](https://pyrx.sourceforge.io/home) for all the binding affinity evaluation.
-
-My thanks to Topazape, PyRx, and Sage Health for making this exciting work possible!
+# LSTM_Chem
+This is the implementation of the paper - [Generative Recurrent Networks for De Novo Drug Design](https://doi.org/10.1002/minf.201700111)
+## Changelog
+### 2021-08-09
+* Now support tensorflow >= 2.5.0
+### 2020-03-25
+* Changed the code to use tensorflow 2.1.0 (tf.keras)
+### 2019-12-23
+* Reimplimented all code to use tensorflow 2.0.0 (tf.keras)
+* Changed data_loader to use generator to reduce memory usage
+* Removed some unused atoms and symbols
+* Changed directory layout
 
 ## Requirements
+This model is built using Python 3.7. See `Pipfile` or `requirements.txt` for dependencies.
+I strongly recommend using GPU version of tensorflow.Learning this model with all the data is very slow in CPU mode (about 9 hrs / epoch).
+RDKit and matplotlib are used for SMILES cleanup, validation, and visualization of molecules and their properties.
+Recently, RDKit can be installed with `pip`, you don't have to use Anaconda!
+Scikit-learn is used for PCA.
 
-Requirements are identical to the original Topazape repo.
+## Usage
+### Training
+Just run below. However, all the data is used according to the default setting. So please be careful, it will take a long time.
+If you don't have enough time, set `data_length` to a different value in `base_config.json`.
+```console
+$ python train.py
+```
+After training, `experiments/{exp_name}/{YYYY-mm-dd}/config.json` is generated.
+It's a copy of `base_config.json` with additional settings for internal varibale. Since it is used for generation, be careful when rewriting.
+### Generation
+See `example_Randomly_generate_SMILES.ipynb`.
+### fine-tuning
+See `example_Fine-tuning_for_TRPM8.ipynb`.
 
-## Changes to Original Files
+## Detail
+### Configuration
+See `base_config.json`. If you want to change, please edit this file before training.
 
-- Added a timeout feature in the cleanup_smiles.py script as in some cases of invalid smiles script would just hang
-- Updated the max length of smiles used for training from 74 characters to 128 characters (this made the generative model much more robust)
-- Modified notebook to use GPU over CPU
-- Various parameter changes to RNN network (no architecture changes though)
+| parameters | meaning |
+| ---- | ---- |
+| exp_name | experiment name (default: `LSTM_Chem`) |
+| data_filename | filepath for training the model (`SMILES file with newline as delimiter`) |
+| data_length | number of SMILES for training. If you set 0, all the data is used (default: `0`) |
+| units | size of hidden state vector of two LSTM layers (default: `256`, see the paper) |
+| num_epochs | number of epochs (default: `22`, see the paper) |
+| optimizer | optimizer (default: `adam`) |
+| seed | random seed (default: `71`) |
+| batch_size | batch size (default: `256`) |
+| validation_split | split ratio for validation (default: `0.10`) |
+| varbose_training | verbosity mode (default: `True`) |
+| checkpoint_monitor | quantity to monitor (default: `val_loss`) |
+| checkpoint_mode | one of {`auto`, `min`, `max`} (default: `min`) |
+| checkpoint_save_best_only | the latest best model according to the quantity monitored will not be overwritten (default: `False`)|
+| checkpoint_save_weights_only | If True, then only the model's weights will be saved (default: `True`)|
+| checkpoint_verbose | verbosity mode while `ModelCheckpoint` (default: `1`) |
+| tensorboard_write_graph | whether to visualize the graph in TensorBoard (defalut: `True`) |
+| sampling_temp | sampling temperature (default: `0.75`, see the paper) |
+| smiles_max_length | maximum size of generated SMILES (symbol) length (default: `128`)|
+| finetune_epochs | epochs for fine-tuning (default: `12`, see the paper) |
+| finetune_batch_size | batch size of finetune (default: `1`) |
+| finetune_filename | filepath for fine-tune the model (`SMILES file with newline as delimiter`) |
+### Preparing Dataset
+#### Get database from ChEMBL
+Download SQLite dump for ChEMBL25 (ftp://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/chembl_25_sqlite.tar.gz),
+which is 3.3 GB compressed, and 16 GB uncompressed.  
+Unpack it the usual way, `cd` into the directory, and open the database using sqlite console.
+#### Extract SMILES for training
+```console
+$ sqlite3 chembl_25.db
+SQLite version 3.30.1 2019-10-10 20:19:45
+Enter ".help" for usage hints.
+sqlite> .output dataset.smi
+```
+You can get SMILES that annotated nM activities according to the following SQL query.
+```sql
+SELECT
+  DISTINCT canonical_smiles
+FROM
+  compound_structures
+WHERE
+  molregno IN (
+    SELECT
+      DISTINCT molregno
+    FROM
+      activities
+    WHERE
+      standard_type IN ("Kd", "Ki", "Kb", "IC50", "EC50")
+      AND standard_units = "nM"
+      AND standard_value < 1000
+      AND standard_relation IN ("<", "<<", "<=", "=")
+    INTERSECT
+    SELECT
+      molregno
+    FROM
+      molecule_dictionary
+    WHERE
+      molecule_type = "Small molecule"
+  );
 
-## Approach
-
-### Prepare Data - 'Data Staging.ipynb'
-
-The original network only trained on ~450k unique smiles. My first goal was to train a network from scratch that would be highly adept at generating robust, realistic molecules.
-
-I combined data sets from two sources: i) [Moses data set](https://github.com/molecularsets/moses) and ii) [ChEMBL data set](https://www.ebi.ac.uk/chembl/). Together these two data sets represented about 4 millions smiles.
-
-After cleaning the smiles using the cleanup_smiles.py script and only retaining smiles between 34 to 128 characters in length, './datasets/all_smiles_clean.smi' contains the final list of ~2.5 million smiles on which the initial network was trained.
-
-### Train Initial Network - 'Initial Network.ipynb'
-
-I made no changes to the model architecture to train the baseline model, but did change several parameters to improve performance such as switching to GPU and increasing batch size. It took ~3-4 days to train 25 epochs for the ~2.5million SMILES on a single GTX 1060.
-
-I had originally planned to train for up to 40 epochs, but by 22 epochs the validation loss flattened off and subsequently started to rise, so I used a final model saved after 22 epochs. It's possible this was a local minimum, but the performance of the network in generating realitic molecules was quite high so I did not continue to train it due to limited time.
-
-### Generating Initial Universe of SMILES - 'Initial Network.ipynb'
-
-After completing training, I used the new network to generate 10,000 smiles. I would have liked to generate more to start with a wider set of molecules to evaluate before narrowing in on molecules that bind well, but time was a constaint as the generation process takes several hours.
-
-I evaluated relative performance of the original repo network vs my new network along two metrics from the original repo, and added a third metric of my own creation:
-
-- Validity: of the total number of generated smiles, percentage that are actually valid smiles for molecules
-- Uniqueness: of the total valid number of generated smiles, percentage that are not duplicates
-- Originality: of the total number of valid generated smiles, percentage that are brand new creations that do not appear in the training data
-
-Original LSTM_Chem network benchmarks:
-
-- Validity: 62.3%
-- Uniqueness: 99.8%
-
-My newly trained network metrics:
-
-- Validity: 97.0%
-- Uniqueness: 99.8%
-- Originality: 89.0%
-
-Originally generated 10,000 smiles are saved to './generations/gen0_smiles.smi'
-
-### Finding Top Candidates from Initial Universe of SMILES - 'Evaluation and Refinement.ipynb'
-
-Having generated ~10k new valid molecules, my biggest constraint was time: evaluating each molecule's binding affinity with the coronavirus protease via PyRx is a lengthy process with ~1.5 molecules evaluating per minute. Running an analysis of 10k molecules was therefore not possible as that would take over 100 hours.
-
-In order to minimize time the function initialize_generation_from_mols() randomly picks 30 molecules, then iterates through the rest of the list calculating that molecules Tenimoto Similarity scores to the molecules so far added to the list, and only 'accepts' the molecule if the maximum similarity score is less than a certain threshold. This ensures that even a smaller sample will feature a diverse set of molecules.
-
-I was then able to save smiles to a pandas dataframe (csv), and also convert smiles to molecules and write these molecules to an SDF file which could be manually imported into PyRx for analysis. PyRx then outputs a csv of molecules and their binding scores after analysis. In order to relate smiles in my pandas/csv to molecules as SDF in PyRx, I used Chem.PropertyMol.PropertyMol(mol).setProp() to set the 'Title' property to a unique identifier of four letters and a generation number.
-
-### Evaluating Molecule <> Coronvirus Fit - PyRx
-
-I used PyRx to evalaute molecule binding scores. I recommend this tutorial to get started:
-[PyRX ligand docking tutorial](https://www.youtube.com/watch?v=2t12UlI6vuw)
-
-### Transfer Learning & Genetic Algorithm - 'Evaluation and Refinement.ipynb'
-
-After evaluating about 1500 gen0 smiles in PyRx (an overnight task), I had a variety of scores for a diverse set of molecules. I then employed techniques and principles of genetic algorithms and transfer learning to take the original network's knowledge of creating realistic molecules and transfer it to the domain of making molecules specifically adept at binding with the coronavirus.
-
-Each generation I ran the following steps:
-
-1. Ranked all molecules so far tested across all generations by binding scores, and picked the top X smiles with the best scores (I used 35).
-2. Calculate the similarity of each remaining molecule with the set of molecules from Step 1, and calculate an adjusted score that boosts molecules that are very different than the top ranking molecules and have good but not great scores (ie they may work via a different mechanism so keep exploring that mechanism). Take the top X smiles ranked by this similarity adjusted score (I used 5).
-3. In basic research, I learned that one of the most critical defining charactersitics of small molecules is that they weigh less than 900 daltons. I noticed that larger molecules (1000-1050 range) seemed to be getting high binding affinfity scores, so in order to both learn from what made those large molecules good, but also promote smaller molecules, I computed a weight adjusted score that boosts light weight molecules with good but not great scores. I then ranked by this adusted score and took the top X molecules (I used 5).
-4. The above steps yielded a list of 45 molecules considered 'good fits' across three metrics of fit: i) overall score, ii) similarity adjusted score (ensuring diverse molecules are included), iii) weight adjusted score (ensuring especially small molecules are included). As a way to promote random 'mutations' (inspired by a genetic algomith approach) I used the _baseline_ model to generate a random sample of molecules in each generation. (I took 5)
-5. Now we have 50 total 'target' smiles (ie the 'parents' for our genetic algorithm). I then cumulatively the previous generation's network on these 50 target smiles. I applied a rule-of-thumb to train the network enough to cut its loss in half from the frist epoch to the last epoch each time. By trial-and-error, I found this to typically be ~5 epochs, so that's what I used.
-6. After training a new model on the generation's well-fit "parents", I used it to generate the next generation of ideally better-fit "children". As a rule of thumb I would generate 500 smiles each generation, which after removing duplicates, invalids, etc usually led to a few hundred children to evaluate per generation.
-7. Save the new generation to the tracking pandas/csv and to molecule SDF, then feed SDF into PyRx and evaluate.
-
-I repeated the above steps across 10 generations, each time using the best fit + 'mutation' training set from the prior generation to teach the network to create molecules better and better at binding.
-
-## Final Results - 'Final Results.ipynb'
-
-Here I took the top candidates I'd found (score <-15 and weight <900 daltons) and reran them in PyRx, splitting out columns for each molecules best binding score, and its average binding score (its average across the molecule's modes in PyRx), and each molecules similarity to existing HIV inhibitor drugs and the drug Remdesivir which is currently in clinical testing.
-
-As you can see, the model generated significantly better binding scores than existing drugs.
-
-![final results PyRx screenshot](https://github.com/mattroconnor/deep_learning_coronavirus_cure/blob/master/generations/results/final_results.JPG "PyRx Final Results")
-
-See './generations/master_results_table_final.csv' for full table of final results.
-
-## Next Steps
-
-- Have a domain expert analyze top findings for fit and/or find the molecules in the universe of existing approved drugs which are most similar to top findings and evaluate them for fit
-- According to [this paper](https://arxiv.org/pdf/1703.07076.pdf) the baseline model may be further improved by training on a universe of enumerated smiles, not just canonical smiles
-- Code needs refactoring
-
-## About Me (Matt O'Connor)
-
-I am a data science and strategy coach who guides businesses through the delivery of real world projects to 10x their internal data & AI capabilities while delivering immediate value.
-
-I coach:
-
-- Executives: on data & AI strategy, leadership, organizational transformation, and culture
-- Business Teams: on data team structures, solution design, and project management
-- Tech Teams: on data/ML/AI architecture, deployment, infrastructure, and tools
-
-My experience includes having served as lead data scientist of algorithmic trading for Ray Dalio’s \$160bn hedge fund Bridgewater Associates, raising VC funding at 7-figure valuations, and coaching some of the world's largest multinationals in the supply chain, retail, banking & insurance, and real estate industries on data transformations.
-
-It my sincere hope my work helps us collectively advance the fight against coronavirus. If you reuse or republish my findings or work, please attribute me: "Matt O'Connor, Founder of https://Reboot.ai"
-
-My github is almost exclusively contractually private projects, but to get in touch please visit [Reboot AI](https://www.reboot.ai/) or connect with me on [LinkedIn](https://www.linkedin.com/in/mattroconnor/).
-
-## Other Helpful Links (arbitary order)
-
-https://github.com/EBjerrum/SMILES-enumeration
-
-https://downloads.ccdc.cam.ac.uk/documentation/API/descriptive_docs/docking.html#rescoring
-
-https://life.bsc.es/pid/pydock/index.html
-
-https://github.com/brianjimenez/pydock_tutorial
-
-https://www.rdkit.org/docs/GettingStartedInPython.html
-
-https://www.rcsb.org/pdb/explore/sequenceCluster.do?structureId=6LU7&entity=1&seqid=95
-
-https://docs.google.com/document/d/1Ni77kjCfAvSFSXAkZsboDQ80UUu2YGJ232jS499TR5Y/edit
-
-https://github.com/sarisabban/Notes/blob/master/AutoDock.py
-
-http://autodock.scripps.edu/faqs-help/how-to/how-to-setup-adt-scripts
-
-https://omictools.com/binana-tool
-
-https://sourceforge.net/p/rdkit/mailman/message/36335970/
+```
+You can get 556134 SMILES in `dataset.smi`. According to the paper,
+the dataset was preprocessed and duplicates, salts, and stereochemical information were removed,
+SMILES strings with lengths from 34 to 74 (tokens). So I made SMILES clean up script.
+Run the following to get cleansed SMILES. It takes about 10 miniutes or more. Please wait.
+```console
+$ python cleanup_smiles.py datasets/dataset.smi datasets/dataset_cleansed.smi
+```
+You can get 438552 SMILES. This dataset is used for training.
+#### SMILES for fine-tuning
+The paper shows 5 TRPM8 antagonists for fine-tuning.
+```console
+FC(F)(F)c1ccccc1-c1cc(C(F)(F)F)c2[nH]c(C3=NOC4(CCCCC4)C3)nc2c1
+O=C(Nc1ccc(OC(F)(F)F)cc1)N1CCC2(CC1)CC(O)c1cccc(Cl)c1O2
+O=C(O)c1ccc(S(=O)(=O)N(Cc2ccc(C(F)(F)C3CC3)c(F)c2)c2ncc3ccccc3c2C2CC2)cc1
+Cc1cccc(COc2ccccc2C(=O)N(CCCN)Cc2cccs2)c1
+CC(c1ccc(F)cc1F)N(Cc1cccc(C(=O)O)c1)C(=O)c1cc2ccccc2cn1
+```
+You can see this in `datasets/TRPM8_inhibitors_for_fine-tune.smi`.
+#### Extract known TRPM8 inhibitors from ChEMBL25
+Open the database using sqlite console.
+```console
+$ sqlite3 chembl_25.db
+SQLite version 3.30.1 2019-10-10 20:19:45
+Enter ".help" for usage hints.
+sqlite> .output known-TRPM8-inhibitors.smi
+```
+Then issue the following SQL query. I set maximum IC50 activity to 10 uM.
+```sql
+SELECT
+  DISTINCT canonical_smiles
+FROM
+  activities,
+  compound_structures
+WHERE
+  assay_id IN (
+    SELECT
+      assay_id
+    FROM
+      assays
+    WHERE
+      tid IN (
+        SELECT
+          tid
+        FROM
+          target_dictionary
+        WHERE
+          pref_name = "Transient receptor potential cation channel subfamily M member 8"
+      )
+  )
+  AND standard_type = "IC50"
+  AND standard_units = "nM"
+  AND standard_value < 10000
+  AND standard_relation IN ("<", "<<", "<=", "=")
+  AND activities.molregno = compound_structures.molregno;
+```
+You can get 494 known TRPM8 inhibitors. As described above, clean up the TRPM8 inhibitor SMILES.
+Please use the `-ft` option to ignore SMILES strings (tokens) length restriction.
+```console
+$ python cleanup_smiles.py -ft datasets/known-TRPM8-inhibitors.smi datasets/known_TRPM8-inhibitors_cleansed.smi
+```
+You can get 477 SMILES. I used this for mere visualization of the results of fine-tuning.

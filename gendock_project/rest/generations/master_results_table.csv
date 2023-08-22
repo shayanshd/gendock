@@ -1,6 +1,11 @@
 id,gen,smile,source,score
-AAAA,0,COc1ccc(-c2nnc(CCC(=O)Nc3ccccc3)n2C)cc1,generated,99.9
-AAAB,0,CCN(C(=O)CN1CCOCC1)c1ccc2c(c1)CCCC2,generated,99.9
-AAAC,0,CC(C)n1nccc1NC(=O)c1cc(-c2ccccc2)[nH]n1,generated,99.9
-AAAD,0,NC(=O)c1ccc(Nc2ccc(CN3CCNCC3)c(F)c2)c(F)c1,generated,99.9
-AAAE,0,CN(C)C(=O)C1CCCN(C(=O)Cc2cn(-c3ccccc3)nn2)C1,generated,99.9
+AAAA,0,CCCCC(NC(=O)Nc1cc2[nH]nc(C(C)=O)c2cn1)c1ccc(F)cc1,generated,99.9
+AAAB,0,COc1ccc(Cn2cnc3c(N)nc(SCC(=O)c4ccccc4)cc32)cc1,generated,99.9
+AAAC,0,COc1cc(-c2c(C)nc(N)nc2C)ccc1SC(C)S(N)(=O)=O,generated,99.9
+AAAD,0,CCc1c(C=C(C(=O)O)C2CCCCC2)[nH]c2cc(C)ccc12,generated,99.9
+AAAE,0,Cc1cccc(CCc2cc(C)c(C(=O)c3ccc(-c4ccccc4)o3)c(C)n2)c1,generated,99.9
+AAAF,0,Cc1ccc(CCCNC(=O)c2ccc(O)c(C(=O)N(C)C)c2)cc1,generated,99.9
+AAAG,0,CCCC(CC)CC(=O)NS(=O)(=O)c1ccc(-c2csc(N)c2-c2ccc(OC)cc2)cc1,generated,99.9
+AAAH,0,CC(C)(C)c1ccc(C(=O)N2C(C(=O)NCc3ccccc3)CC3CC32)cc1,generated,99.9
+AAAI,0,CC(=O)c1cnc(CN(C)C)c(CNC(=O)c2cc(C)cc(C(F)(F)F)c2)c1,generated,99.9
+AAAJ,0,CCCCCCCCCCCCCCCCCC(=O)NC1c2cc(C)c(C)nc2OCC1O,generated,99.9

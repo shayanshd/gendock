@@ -1,7 +1,4 @@
-import copy
 import numpy as np
-
-import time
 
 
 class SmilesTokenizer(object):
@@ -30,7 +27,7 @@ class SmilesTokenizer(object):
             'S',
             'K',
             'V',
-            'I',
+            'I'
         ]
         special = [
             '(', ')', '[', ']', '=', '#', '%', '0', '1', '2', '3', '4', '5',
@@ -51,8 +48,6 @@ class SmilesTokenizer(object):
         N = len(smiles)
         i = 0
         token = []
-
-        timeout = time.time() + 5   # 5 seconds from now
         while (i < N):
             for j in range(self.table_len):
                 symbol = self.table[j]
@@ -60,8 +55,6 @@ class SmilesTokenizer(object):
                     token.append(symbol)
                     i += len(symbol)
                     break
-            if time.time() > timeout:
-                break 
         return token
 
     def one_hot_encode(self, tokenized_smiles):

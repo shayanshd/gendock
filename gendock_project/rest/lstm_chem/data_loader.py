@@ -3,7 +3,7 @@ import os
 import numpy as np
 from tqdm import tqdm
 from tensorflow.keras.utils import Sequence
-from lstm_chem.utils.smiles_tokenizer import SmilesTokenizer
+from lstm_chem.utils.smiles_tokenizer2 import SmilesTokenizer
 
 
 class DataLoader(Sequence):
@@ -110,6 +110,7 @@ class DataLoader(Sequence):
         self.X = np.array(self.X, dtype=np.float32)
         self.y = np.array(self.y, dtype=np.float32)
 
+#        return self.X, self.y, [None]
         return self.X, self.y
 
     def _pad(self, tokenized_smi):
