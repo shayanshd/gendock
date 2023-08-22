@@ -1,9 +1,10 @@
 # csv_processor/urls.py
 from django.urls import path
-from .views import UploadCSVView, ProcessCSVView, GetProgress
+from .views import UploadCSVView, ProcessCSVView, GetProgress, train_view
 
 urlpatterns = [
     path('upload/', UploadCSVView.as_view(), name='upload'),
     path('process-csv/', ProcessCSVView.as_view(), name='process_csv'),
     path('get-progress/<task_id>', GetProgress.as_view(),name='get_progress'),
+    path('train/', train_view, name='train'),
 ]

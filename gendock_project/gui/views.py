@@ -9,6 +9,13 @@ from celery_progress.backend import Progress
 from django.http import HttpResponse
 from celery.app import default_app
 
+def train_view(request):
+    csvs = UploadedCSV.objects.filter(cleaned_smiles_file__isnull=False)
+    print('************************',csvs[2])
+
+    
+    return render(request, 'train.html', {'csvs': csvs})
+
 class ProcessCSVView(View):
     def post(self, request):      
         pk_list = request.POST.getlist('selected_csvs')
@@ -36,8 +43,6 @@ class GetProgress(View):
         default_app.control.revoke(task_id, terminate=True, signal='SIGKILL')
         return HttpResponse('Stopped')
             
-        
-
 class UploadCSVView(View):
     def get(self, request):
         uploaded_csv_list = UploadedCSV.objects.all()

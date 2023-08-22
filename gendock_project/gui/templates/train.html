@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Train{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-8">
+    <h1 class="text-3xl font-semibold mb-6">Train Models</h1>
+
+    <table class="min-w-full">
+        <thead>
+            <tr>
+                <th class="px-4 py-2">Uploaded CSV</th>
+                <th class="px-4 py-2">Cleaned Smiles File</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for csv in csvs %}
+                <tr>
+                    <td class="border px-4 py-2">{{ csv['csv_file'] }}</td>
+                    <td class="border px-4 py-2">
+                        <a href="{{ cleaned_smiles_file.cleaned_smiles_file }}">{{ csv['cleaned_smiles_file'] }}</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
