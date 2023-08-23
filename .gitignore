@@ -15,3 +15,17 @@ gendock_project/rest/lstm_chem/utils/__pycache__/smiles_tokenizer.cpython-39.pyc
 gendock_project/rest/lstm_chem/utils/__pycache__/smiles_tokenizer.cpython-39.pyc
 gendock_project/rest/lstm_chem/__pycache__/__init__.cpython-39.pyc
 gendock_project/rest/lstm_chem/utils/__pycache__/smiles_tokenizer.cpython-39.pyc
+gendock_project/gui/__pycache__/__init__.cpython-310.pyc
+gendock_project/gui/__pycache__/admin.cpython-310.pyc
+gendock_project/gui/__pycache__/apps.cpython-310.pyc
+gendock_project/gui/__pycache__/models.cpython-310.pyc
+gendock_project/gui/__pycache__/tasks.cpython-310.pyc
+gendock_project/gui/__pycache__/urls.cpython-310.pyc
+gendock_project/gui/__pycache__/views.cpython-310.pyc
+gendock_project/gui/migrations/__pycache__/__init__.cpython-310.pyc
+gendock_project/gui/migrations/__pycache__/0001_initial.cpython-310.pyc
+gendock_project/gui/migrations/__pycache__/0002_uploadedcsv_cleaned_smiles_file.cpython-310.pyc
+gendock_project/gui/migrations/__pycache__/0003_uploadedcsv_task_id.cpython-310.pyc
+gendock_project/gui/migrations/__pycache__/0004_cleansmiles.cpython-310.pyc
+gendock_project/gui/migrations/__pycache__/0005_alter_uploadedcsv_cleaned_smiles_file.cpython-310.pyc
+gendock_project/gui/migrations/__pycache__/0006_alter_uploadedcsv_cleaned_smiles_file_and_more.cpython-310.pyc

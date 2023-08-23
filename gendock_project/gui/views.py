@@ -10,8 +10,8 @@ from django.http import HttpResponse
 from celery.app import default_app
 
 def train_view(request):
-    csvs = UploadedCSV.objects.filter(cleaned_smiles_file__isnull=False)
-    print('************************',csvs[2])
+    csvs = UploadedCSV.objects.filter(cleaned_smiles_file__isnull=False).values()
+    print('************************',csvs)
 
     
     return render(request, 'train.html', {'csvs': csvs})

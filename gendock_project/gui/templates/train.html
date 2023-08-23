@@ -9,16 +9,17 @@
     <table class="min-w-full">
         <thead>
             <tr>
-                <th class="px-4 py-2">Uploaded CSV</th>
                 <th class="px-4 py-2">Cleaned Smiles File</th>
+                <th class="px-4 py-2">Uploaded CSV</th>
+                
             </tr>
         </thead>
         <tbody>
             {% for csv in csvs %}
                 <tr>
-                    <td class="border px-4 py-2">{{ csv['csv_file'] }}</td>
-                    <td class="border px-4 py-2">
-                        <a href="{{ cleaned_smiles_file.cleaned_smiles_file }}">{{ csv['cleaned_smiles_file'] }}</a>
+                    <td class="border px-4 py-2">{{ csv.cleaned_smiles_file }}</a>
+                    <td class="border px-4 py-2">{{ csv.csv_file }}</td>
+                    
                     </td>
                 </tr>
             {% endfor %}
