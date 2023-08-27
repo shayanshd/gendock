@@ -1,7 +1,7 @@
 # csv_processor/views.py
 from django.shortcuts import render, redirect
 from django.views import View
-from .models import UploadedCSV
+from .models import UploadedCSV, CleanedSmile
 import os
 from .tasks import process_csv_task
 from celery.result import AsyncResult
@@ -10,11 +10,9 @@ from django.http import HttpResponse
 from celery.app import default_app
 
 def train_view(request):
-    csvs = UploadedCSV.objects.filter(cleaned_smiles_file__isnull=False).values()
-    print('************************',csvs)
-
-    
-    return render(request, 'train.html', {'csvs': csvs})
+    cleaned = CleanedSmile.objects.filter(task_status__in=['C'])
+    print(cleaned)
+    return render(request, 'train.html', {'cleaned': cleaned})
 
 class ProcessCSVView(View):
     def post(self, request):      
@@ -30,10 +28,13 @@ class GetProgress(View):
         progress = Progress(AsyncResult(task_id)) 
         percent_complete = int(progress.get_info()['progress']['percent'])
             
-        if percent_complete == 100:
-            uploaded_csv_list = UploadedCSV.objects.all()
-            context = {'uploaded_csv_list': uploaded_csv_list}
-            return render(request, 'csv_list.html', context=context)
+        if percent_complete >= 10:
+            cleaned_smi = CleanedSmile.objects.get(task_id=task_id)
+            print(cleaned_smi.csv_file.all())
+            context = {'cleaned_smi': cleaned_smi}
+            return render(request, 'process_csv_done.html', context=context)
+            # return redirect('train')
+            # return render(request, 'csv_list.html', context=context)
         
         context = {'task_id':task_id, 'value': percent_complete}
         return render(request, 'process_csv.html',context=context)
@@ -65,10 +66,10 @@ class UploadCSVView(View):
                 uploaded_csv = UploadedCSV.objects.get(pk=pk)
 
                 # Delete the associated cleaned SMILES file
-                cleaned_smiles_file = uploaded_csv.cleaned_smiles_file
-                if cleaned_smiles_file:
-                    if os.path.exists(cleaned_smiles_file):
-                        os.remove(cleaned_smiles_file)
+                # cleaned_smiles_file = uploaded_csv.cleaned_smiles_file
+                # if cleaned_smiles_file:
+                #     if os.path.exists(cleaned_smiles_file):
+                #         os.remove(cleaned_smiles_file)
 
                 # Delete the UploadedCSV object
                 uploaded_csv.delete()

@@ -5,7 +5,7 @@ from rdkit import Chem, RDLogger
 from rdkit.Chem import MolStandardize
 from celery import shared_task
 from celery_progress.backend import ProgressRecorder
-from .models import UploadedCSV
+from .models import UploadedCSV, CleanedSmile
 
 RDLogger.DisableLog('rdApp.*')
 
@@ -13,26 +13,36 @@ RDLogger.DisableLog('rdApp.*')
 
 @shared_task(bind=True)
 def process_csv_task(self, pk_list):
-    csv_path = []
+    uploaded_csv = []
     pk_names = ''
+
     for pk in pk_list:
-        uploaded_csv = UploadedCSV.objects.get(pk=pk)
-        csv_path.append(uploaded_csv.csv_file.path)
+        uploaded_csv.append(UploadedCSV.objects.get(pk=pk))
+        # csv_path.append(uploaded_csv.csv_file.path)
         pk_names = pk_names + '_' +str(pk)
+    cleaned_smiles_dir = './cleaned_smiles'
+    cleaned_smiles_file = os.path.join(cleaned_smiles_dir, pk_names+'_clean.smi')
+
+    cs = CleanedSmile.objects.create(cleaned_file = cleaned_smiles_file, task_id = self.request.id)
+    for csv_file in uploaded_csv:
+        cs.csv_file.add(csv_file)
+    cs.save()
+
     print(pk_names)
+    print(uploaded_csv)
 
     # uploaded_csv = UploadedCSV.objects.get(pk=pk)
     print("Task started")
     # print(uploaded_csv.csv_file)
     progress_recorder = ProgressRecorder(self)
     total_smiles = []
-    for path in csv_path:
-        dataset1 = pd.read_csv(path, sep=',')
+    for csv_path in uploaded_csv:
+        dataset1 = pd.read_csv(csv_path.csv_file.path, sep=',')
         try:
             dataset1 = dataset1[dataset1['smiles'].notnull()]
         except (ValueError, Exception) as e:
             return "Please set the column header name as 'smiles' in Dataset 1."
-        print(f'total smiles in dataset {path}: ' + str(dataset1.shape[0]))
+        print(f'total smiles in dataset {csv_path}: ' + str(dataset1.shape[0]))
         dataset1['smiles'] = dataset1["smiles"]
         dataset1['length'] = dataset1["smiles"].str.len()
 
@@ -71,17 +81,18 @@ def process_csv_task(self, pk_list):
     print('done.')
     print(f'output SMILES num: {len(cl_smiles)}')
 
-    cleaned_smiles_dir = './cleaned_smiles'
+    # cleaned_smiles_dir = './cleaned_smiles'
     os.makedirs(cleaned_smiles_dir, exist_ok=True)
 
-    cleaned_smiles_file = os.path.join(cleaned_smiles_dir, pk_names+'_clean.smi')
+    # cleaned_smiles_file = os.path.join(cleaned_smiles_dir, pk_names+'_clean.smi')
 
     with open(cleaned_smiles_file, 'w') as f:
         for smi in cl_smiles:
             f.write(smi + '\n')
-    for pk in pk_list:
-        uploaded_csv = UploadedCSV.objects.get(pk=pk)
-        uploaded_csv.cleaned_smiles_file = cleaned_smiles_file  # Set the cleaned_smiles_path
-        uploaded_csv.save()
+    cs.task_status = 'C'
+    cs.save()
+
+    
+
     return cleaned_smiles_file
 

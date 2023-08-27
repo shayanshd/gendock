@@ -14,14 +14,13 @@
                 
             </tr>
         </thead>
-        <tbody>
-            {% for csv in csvs %}
+        <tbody>            
+            {% for cli in cleaned %}               
                 <tr>
-                    <td class="border px-4 py-2">{{ csv.cleaned_smiles_file }}</a>
-                    <td class="border px-4 py-2">{{ csv.csv_file }}</td>
-                    
+                    <td class="border px-4 py-2">{{ cli.cleaned_file }}</td>                  
+                    <td class="border px-4 py-2">{{ cli.csv_file }}</td>                   
                     </td>
-                </tr>
+                </tr>              
             {% endfor %}
         </tbody>
     </table>
