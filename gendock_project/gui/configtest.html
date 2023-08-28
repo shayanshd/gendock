@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Train{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-8">
+    <h1 class="text-3xl font-semibold mb-6">Train Models</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {% for cli in cleaned %}
+            <div class="bg-white shadow-md p-6 rounded-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">{{ cli.cleaned_file|slice:"17:" }}</h2>
+                    <div class="space-x-2">
+                        <button class="px-4 py-2 bg-red-500 text-white rounded-lg">Delete</button>
+                        <button class="px-4 py-2 bg-blue-500 text-white rounded-lg">Train</button>
+                    </div>
+                </div>
+                <ul class="list-disc pl-6">
+                    {% for csv in cli.csv_file.all %}
+                        <li>{{ csv.csv_file.name|slice:"8:" }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% empty %}
+            <p class="text-red-600">Sorry, there is no cleaned smiles file.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

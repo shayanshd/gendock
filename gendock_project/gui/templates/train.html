@@ -6,23 +6,81 @@
 <div class="container mx-auto py-8">
     <h1 class="text-3xl font-semibold mb-6">Train Models</h1>
 
-    <table class="min-w-full">
-        <thead>
-            <tr>
-                <th class="px-4 py-2">Cleaned Smiles File</th>
-                <th class="px-4 py-2">Uploaded CSV</th>
-                
-            </tr>
-        </thead>
-        <tbody>            
-            {% for cli in cleaned %}               
-                <tr>
-                    <td class="border px-4 py-2">{{ cli.cleaned_file }}</td>                  
-                    <td class="border px-4 py-2">{{ cli.csv_file }}</td>                   
-                    </td>
-                </tr>              
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {% for cli in cleaned %}
+        <div class="bg-white shadow-md p-6 rounded-lg">
+            <h2 class="text-xl font-semibold mb-2">{{ cli.cleaned_file|slice:"17:" }}</h2>
+            <ul class="list-disc pl-6">
+                {% for csv in cli.csv_file.all %}
+                <li>{{ csv.csv_file.name|slice:"8:" }}</li>
+                {% endfor %}
+            </ul>
+            <div class="mt-4">
+                <button class="px-4 py-2 bg-blue-500 text-white rounded-lg train-button"
+                    data-file="{{ cli.cleaned_file }}">Train</button>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-red-600">Sorry, there is no cleaned smiles file.</p>
+        {% endfor %}
+    </div>
 </div>
+<script>
+    const csrftoken = "{{ csrf_token }}";
+</script>
+<!-- Modal -->
+<div id="epoch-modal" class="fixed inset-0 z-10 hidden overflow-auto bg-black bg-opacity-50">
+    <div class="relative p-8 bg-white w-80 mx-auto my-20 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold mb-4">Set Number of Epochs</h2>
+        <input id="epochs-input" type="number" class="w-full p-2 border rounded-md mb-4" placeholder="Number of Epochs">
+        <button id="confirm-button" class="px-4 py-2 bg-blue-500 text-white rounded-lg">Confirm</button>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.train-button').forEach(button => {
+        button.addEventListener('click', () => {
+            const cleanedFile = button.getAttribute('data-file');
+            const modal = document.getElementById('epoch-modal');
+            modal.classList.remove('hidden');
+
+            const confirmButton = document.getElementById('confirm-button');
+            const epochsInput = document.getElementById('epochs-input');
+            /*****************************************************/
+            confirmButton.addEventListener('click', () => {
+                const epochs = parseInt(epochsInput.value);
+                if (isNaN(epochs) || epochs <= 0) {
+                    alert('Please enter a valid number of epochs.');
+                    return;
+                }
+                modal.classList.add('hidden');
+                const formData = new FormData();
+                formData.append('cleaned_file', cleanedFile);
+                formData.append('epochs', epochs);
+
+                fetch("{% url 'train' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': csrftoken
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert('An error occurred: ' + data.error);
+                        } else {
+                            alert('Config updated successfully');
+                            modal.classList.add('hidden');
+                        }
+                    })
+                    .catch(error => {
+                        alert('An error occurred: ' + error);
+                    });
+            });
+            /*****************************************************/
+        });
+    });
+</script>
 {% endblock %}

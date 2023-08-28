@@ -19,10 +19,16 @@ def process_csv_task(self, pk_list):
     for pk in pk_list:
         uploaded_csv.append(UploadedCSV.objects.get(pk=pk))
         # csv_path.append(uploaded_csv.csv_file.path)
-        pk_names = pk_names + '_' +str(pk)
+        pk_names = pk_names  +str(pk)+ '_'
     cleaned_smiles_dir = './cleaned_smiles'
-    cleaned_smiles_file = os.path.join(cleaned_smiles_dir, pk_names+'_clean.smi')
-
+    os.makedirs(cleaned_smiles_dir, exist_ok=True)
+    cleaned_smiles_file = os.path.join(cleaned_smiles_dir, pk_names+'clean.smi')
+    try:
+        cs_chk =  CleanedSmile.objects.get(cleaned_file=cleaned_smiles_file )
+    except:
+        cs_chk = None
+    if cs_chk:
+        cs_chk.delete()
     cs = CleanedSmile.objects.create(cleaned_file = cleaned_smiles_file, task_id = self.request.id)
     for csv_file in uploaded_csv:
         cs.csv_file.add(csv_file)
@@ -80,11 +86,6 @@ def process_csv_task(self, pk_list):
 
     print('done.')
     print(f'output SMILES num: {len(cl_smiles)}')
-
-    # cleaned_smiles_dir = './cleaned_smiles'
-    os.makedirs(cleaned_smiles_dir, exist_ok=True)
-
-    # cleaned_smiles_file = os.path.join(cleaned_smiles_dir, pk_names+'_clean.smi')
 
     with open(cleaned_smiles_file, 'w') as f:
         for smi in cl_smiles:

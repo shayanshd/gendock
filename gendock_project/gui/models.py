@@ -3,7 +3,6 @@ import os
 # Create your models here.\
 class UploadedCSV(models.Model):
     csv_file = models.FileField(upload_to='uploads/')
-    # cleaned_smiles_file = models.CharField(max_length=100,null=True, blank=True)
 
     def __str__(self):
         return self.csv_file.name
@@ -11,9 +10,22 @@ class UploadedCSV(models.Model):
     def delete(self, *args, **kwargs):
         # Delete the CSV file from the filesystem
         if self.csv_file:
-            os.remove(self.csv_file.path)
-        super().delete(*args, **kwargs)
+            try:
+                os.remove(self.csv_file.path)
+            except:
+                print('csv file not found')
 
+        # Delete associated cleaned smile files
+        cleaned_smiles = CleanedSmile.objects.filter(csv_file=self)
+        for cleaned_smile in cleaned_smiles:
+            if cleaned_smile.cleaned_file:
+                try:
+                    os.remove(cleaned_smile.cleaned_file)
+                except:
+                    print('smi file not found')
+            cleaned_smile.delete()
+
+        super().delete(*args, **kwargs)
 
 class CleanedSmile(models.Model):
     cleaned_file = models.CharField(max_length=100,null=True, blank=True)
@@ -30,3 +42,4 @@ class CleanedSmile(models.Model):
 
     def __str__(self):
         return self.cleaned_file
+    
