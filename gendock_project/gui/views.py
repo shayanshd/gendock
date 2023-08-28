@@ -13,14 +13,12 @@ import json
 class TrainView(View):
     def get(self, request):  
         cleaned = CleanedSmile.objects.filter(task_status__in=['C'])
-        print(cleaned)
-        print('typoooooooooooo   ',type(cleaned))
         return render(request, 'train.html', {'cleaned': cleaned})
     
     def post(self, request):
         cleaned_file = request.POST.get('cleaned_file')
         epochs = int(request.POST.get('epochs'))
-
+        print(cleaned_file, epochs)
         try:
             # Load the existing config.json
             with open('rest/experiments/LSTM_Chem/config.json', 'r') as config_file:
@@ -55,10 +53,8 @@ class GetProgress(View):
         progress = Progress(AsyncResult(task_id)) 
         percent_complete = int(progress.get_info()['progress']['percent'])
             
-        if percent_complete >= 10:
+        if percent_complete == 100:
             cleaned_smi = CleanedSmile.objects.get(task_id=task_id)
-            print('typeeeeeeeeeeeeeeeee   ',type(cleaned_smi))
-            # print(cleaned_smi.csv_file.all())
             context = {'cleaned_smi': cleaned_smi}
             return render(request, 'process_csv_done.html', context=context)
             # return redirect('train')

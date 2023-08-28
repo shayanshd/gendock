@@ -5,7 +5,9 @@
 {% block content %}
 <div class="container mx-auto py-8">
     <h1 class="text-3xl font-semibold mb-6">Train Models</h1>
-
+    <div id="message-container" class="hidden mt-4">
+        <p id="message-text" class="text-green-500"></p>
+    </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         {% for cli in cleaned %}
         <div class="bg-white shadow-md p-6 rounded-lg">
@@ -34,6 +36,9 @@
         <h2 class="text-xl font-semibold mb-4">Set Number of Epochs</h2>
         <input id="epochs-input" type="number" class="w-full p-2 border rounded-md mb-4" placeholder="Number of Epochs">
         <button id="confirm-button" class="px-4 py-2 bg-blue-500 text-white rounded-lg">Confirm</button>
+        <div id="error-container" class="hidden mt-4">
+            <p id="error-text" class="text-red-500"></p>
+        </div>
     </div>
 </div>
 
@@ -46,40 +51,55 @@
 
             const confirmButton = document.getElementById('confirm-button');
             const epochsInput = document.getElementById('epochs-input');
-            /*****************************************************/
-            confirmButton.addEventListener('click', () => {
+            const messageContainer = document.getElementById('message-container');
+            const messageText = document.getElementById('message-text');
+            const errorContainer = document.getElementById('error-container');
+            const errorText = document.getElementById('error-text');
+
+            const confirmButtonClickHandler = () => {
+                console.log('here')
                 const epochs = parseInt(epochsInput.value);
                 if (isNaN(epochs) || epochs <= 0) {
-                    alert('Please enter a valid number of epochs.');
+                    errorText.textContent = 'Please enter a valid number of epochs.';
+                    errorContainer.classList.remove('hidden');
                     return;
                 }
-                modal.classList.add('hidden');
-                const formData = new FormData();
-                formData.append('cleaned_file', cleanedFile);
-                formData.append('epochs', epochs);
+                confirmButton.addEventListener('click', () => {
 
-                fetch("{% url 'train' %}", {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRFToken': csrftoken
-                    }
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.error) {
-                            alert('An error occurred: ' + data.error);
-                        } else {
-                            alert('Config updated successfully');
-                            modal.classList.add('hidden');
+                    modal.classList.add('hidden');
+                    const formData = new FormData();
+                    formData.append('cleaned_file', cleanedFile);
+                    formData.append('epochs', epochs);
+
+                    fetch("{% url 'train' %}", {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': csrftoken
                         }
                     })
-                    .catch(error => {
-                        alert('An error occurred: ' + error);
-                    });
-            });
-            /*****************************************************/
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                messageText.textContent = 'An error occurred: ' + data.error;
+                                messageContainer.classList.remove('hidden');
+                            } else {
+                                messageText.textContent = 'Config updated successfully';
+                                messageContainer.classList.remove('hidden');
+                                modal.classList.add('hidden');
+                            }
+                        })
+                        .catch(error => {
+                            messageText.textContent = 'An error occurred: ' + error;
+                            messageContainer.classList.remove('hidden');
+                        });
+
+                    confirmButton.removeEventListener('click', confirmButtonClickHandler);
+                })
+            };
+
+            confirmButton.addEventListener('click', confirmButtonClickHandler);
         });
     });
 </script>
