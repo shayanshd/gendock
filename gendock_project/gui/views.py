@@ -3,12 +3,26 @@ from django.shortcuts import render, redirect
 from django.views import View
 from .models import UploadedCSV, CleanedSmile
 import os
-from .tasks import process_csv_task
+from .tasks import process_csv_task, start_training
 from celery.result import AsyncResult
 from celery_progress.backend import Progress
 from django.http import HttpResponse, JsonResponse
 from celery.app import default_app
 import json
+
+
+class TrainProgressView(View):
+    def get(self, request):
+        # Start the Celery task
+        task = start_training.delay()
+        task_id = task.id
+
+        response_data = {
+            'message': 'Training task started successfully.',
+            'task_id': task_id
+        }
+        return JsonResponse(response_data)
+
 
 class TrainView(View):
     def get(self, request):  

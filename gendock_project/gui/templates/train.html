@@ -69,11 +69,8 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.message) {
-                        messageContainer.innerHTML = '<p class="text-green-600">' + data.message + '</p>';
-                        modal.classList.add('hidden');
-
-                        // Redirect to the new progress page
-                        window.location.href = '{% url "train_progress" %}?cleaned_file=' + cleanedFile;
+                        // Redirect to the train progress page
+                        window.location.href = '{% url "train_progress" %}';
                     } else {
                         messageContainer.innerHTML = '<p class="text-red-600">' + (data.error || 'An error occurred.') + '</p>';
                     }

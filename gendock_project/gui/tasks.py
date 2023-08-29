@@ -6,10 +6,15 @@ from rdkit.Chem import MolStandardize
 from celery import shared_task
 from celery_progress.backend import ProgressRecorder
 from .models import UploadedCSV, CleanedSmile
+from rest.lstm_chem.utils.config import process_config
+from rest.lstm_chem.data_loader import DataLoader
+from rest.lstm_chem.model import LSTMChem
+from rest.lstm_chem.trainer import LSTMChemTrainer
+from copy import copy
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
+import tensorflow
 
 RDLogger.DisableLog('rdApp.*')
-
-
 
 @shared_task(bind=True)
 def process_csv_task(self, pk_list):
@@ -97,3 +102,15 @@ def process_csv_task(self, pk_list):
 
     return cleaned_smiles_file
 
+@shared_task(bind=True)
+def start_training(self):
+    CONFIG_FILE = 'rest/experiments/LSTM_Chem/config.json'
+    config = process_config(CONFIG_FILE)
+    modeler = LSTMChem(config, session='train')
+    train_dl = DataLoader(config, data_type='train')
+    valid_dl = copy(train_dl)
+    valid_dl.data_type = 'valid'
+    trainer = LSTMChemTrainer(modeler, train_dl, valid_dl)
+    trainer.train()
+    # Save weights of the trained model
+    trainer.model.save_weights('rest/experiments/LSTM_Chem/checkpoints/LSTM_Chem-baseline-model-full.hdf5')

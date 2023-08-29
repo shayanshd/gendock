@@ -15,12 +15,12 @@ def process_config(json_file):
     config = get_config_from_json(json_file)
     config.config_file = json_file
     config.exp_dir = os.path.join(
-        'experiments/',
+        'rest/experiments/',
         config.exp_name)
     config.tensorboard_log_dir = os.path.join(
-        'experiments/',
+        'rest/experiments/',
         config.exp_name, 'logs/')
     config.checkpoint_dir = os.path.join(
-        'experiments/',
-        config.exp_name, 'checkpoints/')
+        'rest/experiments/',
+        config.exp_name, 'rest/checkpoints/')
     return config
