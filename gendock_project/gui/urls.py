@@ -7,4 +7,5 @@ urlpatterns = [
     path('process-csv/', ProcessCSVView.as_view(), name='process_csv'),
     path('get-progress/<task_id>', GetProgress.as_view(),name='get_progress'),
     path('train/', TrainView.as_view(), name='train'),
+    path('train_progress/', TrainView.as_view(), name='train'),
 ]
