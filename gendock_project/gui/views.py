@@ -17,26 +17,25 @@ class TrainView(View):
     
     def post(self, request):
         cleaned_file = request.POST.get('cleaned_file')
-        epochs = int(request.POST.get('epochs'))
+        epochs = request.POST.get('epochs')
         print(cleaned_file, epochs)
+        if not cleaned_file or not epochs:
+            return JsonResponse({'error': 'Both cleaned file and epochs are required.'}, status=400)
+
+        # Update config.json file with epochs
         try:
-            # Load the existing config.json
             with open('rest/experiments/LSTM_Chem/config.json', 'r') as config_file:
                 config_data = json.load(config_file)
 
-            # Update the config_data with the chosen epochs and cleaned file
-            config_data['num_epochs'] = epochs
+            config_data['num_epochs'] = int(epochs)
             config_data['data_filename'] = cleaned_file
 
-            # Save the updated config.json
             with open('rest/experiments/LSTM_Chem/config.json', 'w') as config_file:
                 json.dump(config_data, config_file)
 
-            response = {'message': 'Config updated successfully'}
-            return JsonResponse(response)
+            return JsonResponse({'message': 'Config updated successfully.'})
         except Exception as e:
-            response = {'error': str(e)}
-            return JsonResponse(response, status=500)
+            return JsonResponse({'error': 'An error occurred while updating config.'}, status=500)
 
 
 class ProcessCSVView(View):

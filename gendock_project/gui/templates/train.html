@@ -1,14 +1,12 @@
 {% extends 'base.html' %}
 
-{% block title %}Train{% endblock %}
+{% block title %}Select a File to Train{% endblock %}
 
 {% block content %}
 <div class="container mx-auto py-8">
-    <h1 class="text-3xl font-semibold mb-6">Train Models</h1>
-    <div id="message-container" class="hidden mt-4">
-        <p id="message-text" class="text-green-500"></p>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <h1 class="text-3xl font-semibold mb-6">Select a File to Train</h1>
+    <div id="message-container" class="mt-2"></div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
         {% for cli in cleaned %}
         <div class="bg-white shadow-md p-6 rounded-lg">
             <h2 class="text-xl font-semibold mb-2">{{ cli.cleaned_file|slice:"17:" }}</h2>
@@ -18,32 +16,28 @@
                 {% endfor %}
             </ul>
             <div class="mt-4">
-                <button class="px-4 py-2 bg-blue-500 text-white rounded-lg train-button"
-                    data-file="{{ cli.cleaned_file }}">Train</button>
+                <button class="px-4 py-2 bg-blue-500 text-white rounded-lg select-button"
+                    data-file="{{ cli.cleaned_file }}">Select</button>
             </div>
         </div>
         {% empty %}
         <p class="text-red-600">Sorry, there is no cleaned smiles file.</p>
         {% endfor %}
+        
     </div>
 </div>
-<script>
-    const csrftoken = "{{ csrf_token }}";
-</script>
+
 <!-- Modal -->
 <div id="epoch-modal" class="fixed inset-0 z-10 hidden overflow-auto bg-black bg-opacity-50">
     <div class="relative p-8 bg-white w-80 mx-auto my-20 rounded-lg shadow-md">
         <h2 class="text-xl font-semibold mb-4">Set Number of Epochs</h2>
         <input id="epochs-input" type="number" class="w-full p-2 border rounded-md mb-4" placeholder="Number of Epochs">
         <button id="confirm-button" class="px-4 py-2 bg-blue-500 text-white rounded-lg">Confirm</button>
-        <div id="error-container" class="hidden mt-4">
-            <p id="error-text" class="text-red-500"></p>
-        </div>
     </div>
 </div>
 
 <script>
-    document.querySelectorAll('.train-button').forEach(button => {
+    document.querySelectorAll('.select-button').forEach(button => {
         button.addEventListener('click', () => {
             const cleanedFile = button.getAttribute('data-file');
             const modal = document.getElementById('epoch-modal');
@@ -52,54 +46,43 @@
             const confirmButton = document.getElementById('confirm-button');
             const epochsInput = document.getElementById('epochs-input');
             const messageContainer = document.getElementById('message-container');
-            const messageText = document.getElementById('message-text');
-            const errorContainer = document.getElementById('error-container');
-            const errorText = document.getElementById('error-text');
 
-            const confirmButtonClickHandler = () => {
-                console.log('here')
+            confirmButton.addEventListener('click', () => {
                 const epochs = parseInt(epochsInput.value);
                 if (isNaN(epochs) || epochs <= 0) {
-                    errorText.textContent = 'Please enter a valid number of epochs.';
-                    errorContainer.classList.remove('hidden');
+                    messageContainer.innerHTML = '<p class="text-red-600">Please enter a valid number of epochs.</p>';
                     return;
                 }
-                confirmButton.addEventListener('click', () => {
 
-                    modal.classList.add('hidden');
-                    const formData = new FormData();
-                    formData.append('cleaned_file', cleanedFile);
-                    formData.append('epochs', epochs);
-
-                    fetch("{% url 'train' %}", {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRFToken': csrftoken
-                        }
+                // Send AJAX request to update config
+                fetch('{% url "train" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: new URLSearchParams({
+                        'cleaned_file': cleanedFile,
+                        'epochs': epochs
                     })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.error) {
-                                messageText.textContent = 'An error occurred: ' + data.error;
-                                messageContainer.classList.remove('hidden');
-                            } else {
-                                messageText.textContent = 'Config updated successfully';
-                                messageContainer.classList.remove('hidden');
-                                modal.classList.add('hidden');
-                            }
-                        })
-                        .catch(error => {
-                            messageText.textContent = 'An error occurred: ' + error;
-                            messageContainer.classList.remove('hidden');
-                        });
-
-                    confirmButton.removeEventListener('click', confirmButtonClickHandler);
                 })
-            };
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        messageContainer.innerHTML = '<p class="text-green-600">' + data.message + '</p>';
+                        modal.classList.add('hidden');
 
-            confirmButton.addEventListener('click', confirmButtonClickHandler);
+                        // Redirect to the new progress page
+                        window.location.href = '{% url "train_progress" %}?cleaned_file=' + cleanedFile;
+                    } else {
+                        messageContainer.innerHTML = '<p class="text-red-600">' + (data.error || 'An error occurred.') + '</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('An error occurred:', error);
+                    messageContainer.innerHTML = '<p class="text-red-600">An error occurred while updating the config.</p>';
+                });
+            });
         });
     });
 </script>
