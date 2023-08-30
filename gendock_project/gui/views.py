@@ -12,16 +12,26 @@ import json
 
 
 class TrainProgressView(View):
-    def get(self, request):
-        # Start the Celery task
-        task = start_training.delay()
-        task_id = task.id
+    template_name = 'train_progress.html'
 
-        response_data = {
-            'message': 'Training task started successfully.',
-            'task_id': task_id
-        }
-        return JsonResponse(response_data)
+    def get(self, request, *args, **kwargs):
+        task_id = request.session.get('task_id')
+        if task_id:
+            task_result = start_training.AsyncResult(task_id)
+            if task_result.ready():
+                captured_logs = task_result.get()
+                context = {'captured_logs': captured_logs}
+                return render(request, self.template_name, context)
+            else:
+                context = {'task_id': task_id}
+                return render(request, self.template_name, context)
+        else:
+            return render(request, self.template_name)
+
+    def post(self, request, *args, **kwargs):
+        task = start_training.delay()  # Start the training task
+        request.session['task_id'] = task.id  # Store the task ID in session
+        return redirect('train_progress') 
 
 
 class TrainView(View):
@@ -100,13 +110,6 @@ class UploadCSVView(View):
             for pk in csv_id_to_delete:
 
                 uploaded_csv = UploadedCSV.objects.get(pk=pk)
-                # uploaded_csv.cleanedsmile_set.all().delete()
-                # Delete the associated cleaned SMILES file
-                # cleaned_smiles_file = uploaded_csv.cleaned_smiles_file
-                # if cleaned_smiles_file:
-                #     if os.path.exists(cleaned_smiles_file):
-                #         os.remove(cleaned_smiles_file)
-                # Delete the UploadedCSV object
                 uploaded_csv.delete()
 
             uploaded_csv_list = UploadedCSV.objects.all()

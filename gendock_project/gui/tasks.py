@@ -11,6 +11,8 @@ from rest.lstm_chem.data_loader import DataLoader
 from rest.lstm_chem.model import LSTMChem
 from rest.lstm_chem.trainer import LSTMChemTrainer
 from copy import copy
+import logging
+from gui.capturing_handler import CapturingHandler
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 import tensorflow
 
@@ -104,6 +106,14 @@ def process_csv_task(self, pk_list):
 
 @shared_task(bind=True)
 def start_training(self):
+    logger = logging.getLogger('train_logger')  # Create a custom logger
+    logger.setLevel(logging.INFO)
+
+    # Set up a handler to capture logs
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.INFO)
+    logger.addHandler(handler)
+
     CONFIG_FILE = 'rest/experiments/LSTM_Chem/config.json'
     config = process_config(CONFIG_FILE)
     modeler = LSTMChem(config, session='train')
@@ -111,6 +121,14 @@ def start_training(self):
     valid_dl = copy(train_dl)
     valid_dl.data_type = 'valid'
     trainer = LSTMChemTrainer(modeler, train_dl, valid_dl)
-    trainer.train()
+
+    # Capture the logs
+    captured_logs = []
+    with CapturingHandler(logger, handler) as capture:
+        trainer.train()
+        captured_logs = capture.captured_output.getvalue().splitlines()
+
     # Save weights of the trained model
     trainer.model.save_weights('rest/experiments/LSTM_Chem/checkpoints/LSTM_Chem-baseline-model-full.hdf5')
+
+    return captured_logs  # Return the captured logs
