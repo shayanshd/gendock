@@ -5,36 +5,50 @@
 {% block content %}
 <div class="container mx-auto py-8">
     <h1 class="text-3xl font-semibold mb-6">Select a File to Train</h1>
-    <div id="message-container" class="mt-2"></div>
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-        {% for cli in cleaned %}
-        <div class="bg-white shadow-md p-6 rounded-lg">
-            <h2 class="text-xl font-semibold mb-2">{{ cli.cleaned_file|slice:"17:" }}</h2>
-            <ul class="list-disc pl-6">
-                {% for csv in cli.csv_file.all %}
-                <li>{{ csv.csv_file.name|slice:"8:" }}</li>
-                {% endfor %}
-            </ul>
-            <div class="mt-4">
-                <button class="px-4 py-2 bg-blue-500 text-white rounded-lg select-button"
-                    data-file="{{ cli.cleaned_file }}">Select</button>
+    <div id="message-container" class="mt-2">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {% for cli in cleaned %}
+            <div class="bg-white shadow-md p-6 rounded-lg">
+                <h2 class="text-xl font-semibold mb-2">{{ cli.cleaned_file|slice:"17:" }}</h2>
+                <ul class="list-disc pl-6">
+                    {% for csv in cli.csv_file.all %}
+                    <li>{{ csv.csv_file.name|slice:"8:" }}</li>
+                    {% endfor %}
+                </ul>
+                <div class="mt-4">
+                    <button class="px-4 py-2 bg-blue-500 text-white rounded-lg select-button"
+                        data-file="{{ cli.cleaned_file }}">Select</button>
+                </div>
             </div>
+            {% empty %}
+            <p class="text-red-600">Sorry, there is no cleaned smiles file.</p>
+            {% endfor %}
+
         </div>
-        {% empty %}
-        <p class="text-red-600">Sorry, there is no cleaned smiles file.</p>
-        {% endfor %}
-        
+    </div>
+
+    <!-- Modal -->
+    <div id="epoch-modal" class="fixed inset-0 z-10 hidden overflow-auto bg-black bg-opacity-50">
+        <div class="relative p-8 bg-white w-80 mx-auto my-20 rounded-lg shadow-md">
+            <button id="close-button" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">
+                <svg class="h-4 w-4" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            <h2 class="text-xl font-semibold mb-4">Set Number of Epochs</h2>
+            <!-- Use a form to submit asynchronously with HTMX -->
+            <form id="train-form" hx-post="{% url 'train' %}" hx-target="#message-container" hx-swap="innerHTML">
+                {% csrf_token %}
+                <input type="hidden" name="cleaned_file" id="cleaned-file-input" value="">
+                <input id="epochs-input" type="number" class="w-full p-2 border rounded-md mb-4"
+                    placeholder="Number of Epochs" name="epochs">
+                <button id="confirm-button" class="px-4 py-2 bg-blue-500 text-white rounded-lg">Start Training</button>
+            </form>
+        </div>
     </div>
 </div>
 
-<!-- Modal -->
-<div id="epoch-modal" class="fixed inset-0 z-10 hidden overflow-auto bg-black bg-opacity-50">
-    <div class="relative p-8 bg-white w-80 mx-auto my-20 rounded-lg shadow-md">
-        <h2 class="text-xl font-semibold mb-4">Set Number of Epochs</h2>
-        <input id="epochs-input" type="number" class="w-full p-2 border rounded-md mb-4" placeholder="Number of Epochs">
-        <button id="confirm-button" class="px-4 py-2 bg-blue-500 text-white rounded-lg">Confirm</button>
-    </div>
-</div>
 
 <script>
     document.querySelectorAll('.select-button').forEach(button => {
@@ -42,45 +56,19 @@
             const cleanedFile = button.getAttribute('data-file');
             const modal = document.getElementById('epoch-modal');
             modal.classList.remove('hidden');
-
+            const closeButton = document.getElementById('close-button');
             const confirmButton = document.getElementById('confirm-button');
-            const epochsInput = document.getElementById('epochs-input');
-            const messageContainer = document.getElementById('message-container');
-
-            confirmButton.addEventListener('click', () => {
-                const epochs = parseInt(epochsInput.value);
-                if (isNaN(epochs) || epochs <= 0) {
-                    messageContainer.innerHTML = '<p class="text-red-600">Please enter a valid number of epochs.</p>';
-                    return;
-                }
-
-                // Send AJAX request to update config
-                fetch('{% url "train" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    },
-                    body: new URLSearchParams({
-                        'cleaned_file': cleanedFile,
-                        'epochs': epochs
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.message) {
-                        // Redirect to the train progress page
-                        window.location.href = '{% url "train_progress" %}';
-                    } else {
-                        messageContainer.innerHTML = '<p class="text-red-600">' + (data.error || 'An error occurred.') + '</p>';
-                    }
-                })
-                .catch(error => {
-                    console.error('An error occurred:', error);
-                    messageContainer.innerHTML = '<p class="text-red-600">An error occurred while updating the config.</p>';
-                });
+            closeButton.addEventListener('click', () => {
+                modal.classList.add('hidden');
             });
+            confirmButton.addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+            // Set the cleaned file input value
+            const cleanedFileInput = document.getElementById('cleaned-file-input');
+            cleanedFileInput.value = cleanedFile;
         });
     });
 </script>
+
 {% endblock %}

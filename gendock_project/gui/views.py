@@ -2,40 +2,40 @@
 from django.shortcuts import render, redirect
 from django.views import View
 from .models import UploadedCSV, CleanedSmile
-import os
 from .tasks import process_csv_task, start_training
 from celery.result import AsyncResult
 from celery_progress.backend import Progress
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from celery.app import default_app
 import json
 
 
 class TrainProgressView(View):
-    template_name = 'train_progress.html'
+    def read_new_lines(self, filename, last_position):
+        new_lines = []      
+        with open(filename, 'r') as file:
+            file.seek(last_position) 
+            new_lines = file.readlines()             
+            last_position = file.tell()       
+        return new_lines, last_position
 
-    def get(self, request, *args, **kwargs):
-        task_id = request.session.get('task_id')
-        if task_id:
-            task_result = start_training.AsyncResult(task_id)
-            if task_result.ready():
-                captured_logs = task_result.get()
-                context = {'captured_logs': captured_logs}
-                return render(request, self.template_name, context)
-            else:
-                context = {'task_id': task_id}
-                return render(request, self.template_name, context)
-        else:
-            return render(request, self.template_name)
+    
+    def get(self, request):
+        filename = './celery.logs'
+        new_lines, last_position = self.read_new_lines(filename, request.session['last_position'])
+        request.session['last_position'] = last_position
+        result = default_app.AsyncResult(request.session['task_id'])
+        if result.state == 'SUCCESS':
+            return HttpResponse(status=286)
+        return render(request, 'train_progress.html',context={'new_lines':new_lines})
 
     def post(self, request, *args, **kwargs):
-        task = start_training.delay()  # Start the training task
-        request.session['task_id'] = task.id  # Store the task ID in session
-        return redirect('train_progress') 
+        pass
 
 
 class TrainView(View):
     def get(self, request):  
+        
         cleaned = CleanedSmile.objects.filter(task_status__in=['C'])
         return render(request, 'train.html', {'cleaned': cleaned})
     
@@ -44,10 +44,11 @@ class TrainView(View):
         epochs = request.POST.get('epochs')
         print(cleaned_file, epochs)
         if not cleaned_file or not epochs:
-            return JsonResponse({'error': 'Both cleaned file and epochs are required.'}, status=400)
+            return HttpResponse('<p class="text-red-600">Please enter a valid number of epochs.</p>')  # Redirect back to the train page
 
         # Update config.json file with epochs
-        try:
+        active_tasks = default_app.control.inspect().active()
+        if not any(active_tasks.values()):
             with open('rest/experiments/LSTM_Chem/config.json', 'r') as config_file:
                 config_data = json.load(config_file)
 
@@ -56,19 +57,28 @@ class TrainView(View):
 
             with open('rest/experiments/LSTM_Chem/config.json', 'w') as config_file:
                 json.dump(config_data, config_file)
+            result = start_training.delay()
+            task_id = result.id
+            request.session['task_id'] = task_id
+            request.session['last_position'] = 0
+            print('suc')
+            return render(request, 'train_progress.html') 
+        print('nisuc')    
+        return HttpResponse('Another task is already in progress.')
 
-            return JsonResponse({'message': 'Config updated successfully.'})
-        except Exception as e:
-            return JsonResponse({'error': 'An error occurred while updating config.'}, status=500)
 
 
 class ProcessCSVView(View):
     def post(self, request):      
         pk_list = request.POST.getlist('selected_csvs')
         if len(pk_list) != 0:
-            task = process_csv_task.delay(pk_list)
-            return render(request, 'process_csv.html', context={'task_id': task.task_id, 'value' : 0})
-
+            active_tasks = default_app.control.inspect().active()
+            if not any(active_tasks.values()):
+            # There are no active tasks, so we can start a new one
+                print(active_tasks.values())
+                task = process_csv_task.delay(pk_list)
+                return render(request, 'process_csv.html', context={'task_id': task.task_id, 'value' : 0})    
+            return HttpResponse('Another task is already in progress.')
         return HttpResponse('Please select a file to proceed')
 
 class GetProgress(View):
@@ -80,8 +90,6 @@ class GetProgress(View):
             cleaned_smi = CleanedSmile.objects.get(task_id=task_id)
             context = {'cleaned_smi': cleaned_smi}
             return render(request, 'process_csv_done.html', context=context)
-            # return redirect('train')
-            # return render(request, 'csv_list.html', context=context)
         
         context = {'task_id':task_id, 'value': percent_complete}
         return render(request, 'process_csv.html',context=context)

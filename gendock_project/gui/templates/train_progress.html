@@ -1,29 +1,11 @@
-{% extends 'base.html' %}
-
-{% block title %}Train Progress{% endblock %}
-
-{% block content %}
-<div class="container mx-auto py-8">
-    <h1 class="text-3xl font-semibold mb-6">Train Progress</h1>
-    
-    <!-- Existing content here -->
-    
-    <h2 class="text-xl font-semibold mb-4">Captured Logs</h2>
-    <div id="captured-logs" class="mb-4">
-        <!-- This is where the captured logs will be displayed -->
+<div class="container mx-auto">
+    <div id="logs" class="w-full bg-black text-white overflow-auto">
+        <div hx-get="{% url 'train_progress' %}" hx-target="#logs" hx-trigger="load delay:500ms" hx-swap="beforeend">
+            {% if new_lines|length > 0 %}
+            {% for line in new_lines %}
+            {{ line|linebreaksbr }}
+            {% endfor %}
+            {% endif %}
+        </div>
     </div>
 </div>
-
-<script>
-    // Use htmx to periodically update the captured logs
-    const capturedLogsElement = document.getElementById('captured-logs');
-
-    const updateCapturedLogs = async () => {
-        const response = await fetch('{% url "train_progress" %}');
-        const logs = await response.text();
-        capturedLogsElement.innerHTML = logs;
-    };
-
-    setInterval(updateCapturedLogs, 3000);  // Refresh every 3 seconds
-</script>
-{% endblock %}

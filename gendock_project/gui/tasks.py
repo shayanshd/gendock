@@ -11,10 +11,11 @@ from rest.lstm_chem.data_loader import DataLoader
 from rest.lstm_chem.model import LSTMChem
 from rest.lstm_chem.trainer import LSTMChemTrainer
 from copy import copy
-import logging
-from gui.capturing_handler import CapturingHandler
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 import tensorflow
+from celery.utils.log import get_task_logger
+
+logger = get_task_logger(__name__)
 
 RDLogger.DisableLog('rdApp.*')
 
@@ -99,20 +100,15 @@ def process_csv_task(self, pk_list):
             f.write(smi + '\n')
     cs.task_status = 'C'
     cs.save()
-
-    
-
     return cleaned_smiles_file
 
 @shared_task(bind=True)
 def start_training(self):
-    logger = logging.getLogger('train_logger')  # Create a custom logger
-    logger.setLevel(logging.INFO)
-
-    # Set up a handler to capture logs
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.INFO)
-    logger.addHandler(handler)
+    log_file_path = './celery.logs'  # Specify the correct path to your celery logs file
+    
+    # Clear the log file before training starts
+    with open(log_file_path, 'w') as log_file:
+        log_file.write('')
 
     CONFIG_FILE = 'rest/experiments/LSTM_Chem/config.json'
     config = process_config(CONFIG_FILE)
@@ -121,14 +117,9 @@ def start_training(self):
     valid_dl = copy(train_dl)
     valid_dl.data_type = 'valid'
     trainer = LSTMChemTrainer(modeler, train_dl, valid_dl)
-
-    # Capture the logs
-    captured_logs = []
-    with CapturingHandler(logger, handler) as capture:
-        trainer.train()
-        captured_logs = capture.captured_output.getvalue().splitlines()
-
-    # Save weights of the trained model
+    # Run trainer.train()
+    trainer.train()
+    # Save weights
     trainer.model.save_weights('rest/experiments/LSTM_Chem/checkpoints/LSTM_Chem-baseline-model-full.hdf5')
 
-    return captured_logs  # Return the captured logs
+    return 'DONE'  # Returning logs to access in the view
