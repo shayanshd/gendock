@@ -10,14 +10,88 @@ from rest.lstm_chem.utils.config import process_config
 from rest.lstm_chem.data_loader import DataLoader
 from rest.lstm_chem.model import LSTMChem
 from rest.lstm_chem.trainer import LSTMChemTrainer
+from rest.lstm_chem.generator import LSTMChemGenerator
 from copy import copy
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 import tensorflow
-from celery.utils.log import get_task_logger
-
-logger = get_task_logger(__name__)
+from rest.gen_process import *
 
 RDLogger.DisableLog('rdApp.*')
+
+@shared_task(bind=True)
+def generate_smiles(self, sample_number, desired_length):
+    log_file_path = './celery.logs'  # Specify the correct path to your celery logs file   
+    # Clear the log file before training starts
+    with open(log_file_path, 'w') as log_file:
+        log_file.write('')
+    # Define the paths and configurations
+    CONFIG_FILE = 'rest/experiments/LSTM_Chem/config.json'
+    config = process_config(CONFIG_FILE)
+
+    # Initialize the modeler and generator
+    modeler = LSTMChem(config, session='generate')
+    generator = LSTMChemGenerator(modeler)
+
+    # Sample smiles
+    sampled_smiles = generator.sample(num=sample_number)
+
+    # Save sampled smiles to a file
+    with open('./rest/generations/gen0notvalid.smi', 'w') as f:
+        for item in sampled_smiles:
+            f.write("%s\n" % item)
+
+    # Read sampled smiles from the file and preprocess
+    sampled_smiles = pd.read_csv('./rest/generations/gen0notvalid.smi', header=None)
+    sampled_smiles = set(list(sampled_smiles[0]))
+
+    # Validate valid smiles and calculate metrics
+    valid_mols = GenProcess.validate_mols(sampled_smiles)
+    print(sample_number)
+    print('Validity: ', f'{len(valid_mols) / sample_number:.2%}')
+
+    valid_smiles = [Chem.MolToSmiles(mol) for mol in valid_mols]
+    print('Uniqueness: ', f'{len(set(valid_smiles)) / len(valid_smiles):.2%}')
+
+    # Check originality against training data
+    training_data = pd.read_csv('./rest/datasets/all_smiles_clean.smi', header=None)
+    training_set = set(list(training_data[0]))
+    original = [smile for smile in valid_smiles if smile not in training_set]
+    print('Originality: ', f'{len(set(original)) / len(set(valid_smiles)):.2%}')
+
+    # Save valid smiles to a file
+    with open('./rest/generations/gen0.smi', 'w') as f:
+        for item in valid_smiles:
+            f.write("%s\n" % item)
+
+    #########################################################
+    # Additional processing steps
+    gen0_table = pd.read_csv('./rest/generations/gen0.smi', sep=',', header=None)
+    gen0_all = list(gen0_table[0])[0:10000]
+    gen0 = []
+    for smi in gen0_all:
+        w = Chem.Descriptors.MolWt(Chem.MolFromSmiles(smi))
+        if w < 500:
+            gen0.append(smi)
+
+    gen0_mols = GenProcess.validate_mols(gen0)
+    gen0_mols = GenProcess.initialize_generation_from_mols(gen0_mols, desired_length)
+    check_master_exists = os.path.exists('./rest/generations/master_results_table.csv')
+    if check_master_exists:
+        os.remove('./rest/generations/master_results_table.csv')
+
+    raw_table = {}
+    df = pd.DataFrame(raw_table, columns=['id', 'gen', 'smile', 'source', 'score'])
+    df.to_csv('./rest/generations/master_results_table.csv', index=False)
+    master_table = pd.read_csv('./rest/generations/master_results_table.csv', sep=',')
+    new_mols_to_test = GenProcess.append_to_tracking_table(master_table, gen0_mols, 'generated', 0)
+    mols_for_pd = new_mols_to_test[0]
+    mols_for_export = new_mols_to_test[1]
+    master_table = master_table.append(mols_for_pd)
+    master_table = master_table.reset_index(drop=True)
+    master_table.to_csv('./rest/generations/master_results_table.csv', index=False)
+    master_table.to_csv('./rest/generations/master_results_table_gen0.csv', index=False)
+    GenProcess.write_gen_to_sdf(mols_for_export, 0, 2000)
+    return 'DONE'
 
 @shared_task(bind=True)
 def process_csv_task(self, pk_list):

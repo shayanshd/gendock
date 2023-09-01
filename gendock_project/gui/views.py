@@ -2,12 +2,45 @@
 from django.shortcuts import render, redirect
 from django.views import View
 from .models import UploadedCSV, CleanedSmile
-from .tasks import process_csv_task, start_training
+from .tasks import process_csv_task, start_training, generate_smiles
 from celery.result import AsyncResult
 from celery_progress.backend import Progress
 from django.http import HttpResponse
 from celery.app import default_app
+from .forms import GenerateSmilesForm
 import json
+
+def generate_progress_view(request):
+    # Simulate progress data and results (replace with actual data)
+    progress_data = {
+        'progress_percentage': 50,
+        'status_message': 'Generating Smiles...',
+    }
+    
+    results_data = {
+        'generated_smiles': ['Smiles1', 'Smiles2', 'Smiles3'],
+    }
+
+    return render(request, 'generate_progress.html', {
+        'progress_data': progress_data,
+        'results_data': results_data,
+    })
+
+def generate_smiles_view(request):
+    if request.method == 'POST':
+        form = GenerateSmilesForm(request.POST)
+        if form.is_valid():
+            sample_number = form.cleaned_data['sample_number']
+            desired_length = form.cleaned_data['desired_length']
+
+            # Enqueue the Celery task with the provided arguments
+            generate_smiles.delay(sample_number, desired_length)
+
+            return redirect('generate_progress')  # Redirect to a success page
+    else:
+        form = GenerateSmilesForm()
+
+    return render(request, 'generate_smiles.html', {'form': form})
 
 
 class TrainProgressView(View):
@@ -18,8 +51,7 @@ class TrainProgressView(View):
             new_lines = file.readlines()             
             last_position = file.tell()       
         return new_lines, last_position
-
-    
+  
     def get(self, request):
         filename = './celery.logs'
         new_lines, last_position = self.read_new_lines(filename, request.session['last_position'])
@@ -31,7 +63,6 @@ class TrainProgressView(View):
 
     def post(self, request, *args, **kwargs):
         pass
-
 
 class TrainView(View):
     def get(self, request):  
@@ -65,8 +96,6 @@ class TrainView(View):
             return render(request, 'train_progress.html') 
         print('nisuc')    
         return HttpResponse('Another task is already in progress.')
-
-
 
 class ProcessCSVView(View):
     def post(self, request):      
@@ -124,4 +153,3 @@ class UploadCSVView(View):
             context = {'uploaded_csv_list': uploaded_csv_list}
             return render(request,'csv_list.html', context=context)
         return redirect('upload')
-    

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Generate Smiles{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-8">
+    <h1 class="text-3xl font-semibold mb-6">Generate Smiles</h1>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="mb-4">
+            <label for="{{ form.sample_number.id_for_label }}" class="block text-gray-700 font-bold mb-2">Sample Number</label>
+            {{ form.sample_number }}
+        </div>
+        
+        <div class="mb-6">
+            <label for="{{ form.desired_length.id_for_label }}" class="block text-gray-700 font-bold mb-2">Desired Length</label>
+            {{ form.desired_length }}
+        </div>
+        
+        <div class="flex justify-end">
+            <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Generate</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
