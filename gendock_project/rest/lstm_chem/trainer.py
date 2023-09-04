@@ -1,16 +1,36 @@
 from glob import glob
 import os
-from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
+from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard, Callback
+from gui.models import TrainLog
+
+
+class BCP(Callback):
+    batch_accuracy = [] # accuracy at given batch
+    batch_loss = [] # loss at given batch    
+    def __init__(self, task_id):
+        super(BCP,self).__init__() 
+        self.task_id = task_id
+    def on_epoch_end(self, epoch, logs=None):                
+        BCP.batch_accuracy.append(logs.get('accuracy'))
+        BCP.batch_loss.append(logs.get('loss'))
+        tl = TrainLog.objects.get(task_id = self.task_id)
+        tl.epoch = epoch
+        tl.val_loss = logs.get('val_loss')
+        tl.train_loss = logs.get('loss')
+        tl.task_status = 'P'
+        tl.save()
 
 
 class LSTMChemTrainer(object):
-    def __init__(self, modeler, train_data_loader, valid_data_loader):
+    def __init__(self, modeler, train_data_loader, valid_data_loader, task_id):
         self.model = modeler.model
         self.config = modeler.config
         self.train_data_loader = train_data_loader
         self.valid_data_loader = valid_data_loader
+        self.task_id = task_id
         self.callbacks = []
         self.init_callbacks()
+
 
     def init_callbacks(self):
         self.callbacks.append(
@@ -30,6 +50,9 @@ class LSTMChemTrainer(object):
                 log_dir=self.config.tensorboard_log_dir,
                 write_graph=self.config.tensorboard_write_graph,
             ))
+        self.callbacks.append(
+            BCP(self.task_id)
+        )
 
     def train(self):
 #        history = self.model.fit_generator(
@@ -55,3 +78,4 @@ class LSTMChemTrainer(object):
 
         with open(os.path.join(self.config.exp_dir, 'config.json'), 'w') as f:
             f.write(self.config.toJSON(indent=2))
+            return history

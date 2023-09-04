@@ -1,7 +1,7 @@
 # csv_processor/views.py
 from django.shortcuts import render, redirect
 from django.views import View
-from .models import UploadedCSV, CleanedSmile
+from .models import UploadedCSV, CleanedSmile, TrainLog
 from .tasks import process_csv_task, start_training, generate_smiles
 from celery.result import AsyncResult
 from celery_progress.backend import Progress
@@ -44,25 +44,24 @@ def generate_smiles_view(request):
 
 
 class TrainProgressView(View):
-    def read_new_lines(self, filename, last_position):
-        new_lines = []      
-        with open(filename, 'r') as file:
-            file.seek(last_position) 
-            new_lines = file.readlines()             
-            last_position = file.tell()       
-        return new_lines, last_position
-  
-    def get(self, request):
-        filename = './celery.logs'
-        new_lines, last_position = self.read_new_lines(filename, request.session['last_position'])
-        request.session['last_position'] = last_position
-        result = default_app.AsyncResult(request.session['task_id'])
-        if result.state == 'SUCCESS':
-            return HttpResponse(status=286)
-        return render(request, 'train_progress.html',context={'new_lines':new_lines})
 
-    def post(self, request, *args, **kwargs):
-        pass
+    def get(self, request, task_id):
+        tl = TrainLog.objects.get(task_id = task_id)
+        epoch = tl.epoch
+        epochs = tl.max_epoch
+        print(epoch, epochs)
+        percent_complete = int(100*epoch/epochs)
+        print(percent_complete)
+        if percent_complete == 100:
+            train_log = TrainLog.objects.get(task_id=task_id)           
+            return HttpResponse(f"<p class='mb-4'>CSV processing complete. The cleaned smiles file is: <em>{train_log}</em> </p>")
+        
+        context = {'task_id':task_id, 'value': percent_complete}
+        return render(request, 'process_csv.html',context=context)
+    
+    def post(self, request, task_id):
+        default_app.control.revoke(task_id, terminate=True, signal='SIGKILL')
+        return HttpResponse('Stopped')
 
 class TrainView(View):
     def get(self, request):  
@@ -90,12 +89,28 @@ class TrainView(View):
                 json.dump(config_data, config_file)
             result = start_training.delay()
             task_id = result.id
-            request.session['task_id'] = task_id
-            request.session['last_position'] = 0
+            # request.session['task_id'] = task_id
+            # request.session['last_position'] = 0
             print('suc')
-            return render(request, 'train_progress.html') 
+            return render(request, 'train_progress.html', context={'task_id': task_id, 'value' : 0})
         print('nisuc')    
         return HttpResponse('Another task is already in progress.')
+
+class GetProgress(View):
+    def get(self, request, task_id):
+        progress = Progress(AsyncResult(task_id)) 
+        percent_complete = int(progress.get_info()['progress']['percent'])
+            
+        if percent_complete == 100:
+            cleaned_smi = CleanedSmile.objects.get(task_id=task_id)           
+            return HttpResponse(f"<p class='mb-4'>CSV processing complete. The cleaned smiles file is: <em>{cleaned_smi.cleaned_file}</em> </p>")
+        
+        context = {'task_id':task_id, 'value': percent_complete}
+        return render(request, 'process_csv.html',context=context)
+    
+    def post(self, request, task_id):
+        default_app.control.revoke(task_id, terminate=True, signal='SIGKILL')
+        return HttpResponse('Stopped')
 
 class ProcessCSVView(View):
     def post(self, request):      
@@ -109,24 +124,7 @@ class ProcessCSVView(View):
                 return render(request, 'process_csv.html', context={'task_id': task.task_id, 'value' : 0})    
             return HttpResponse('Another task is already in progress.')
         return HttpResponse('Please select a file to proceed')
-
-class GetProgress(View):
-    def get(self, request, task_id):
-        progress = Progress(AsyncResult(task_id)) 
-        percent_complete = int(progress.get_info()['progress']['percent'])
-            
-        if percent_complete == 100:
-            cleaned_smi = CleanedSmile.objects.get(task_id=task_id)
-            context = {'cleaned_smi': cleaned_smi}
-            return render(request, 'process_csv_done.html', context=context)
-        
-        context = {'task_id':task_id, 'value': percent_complete}
-        return render(request, 'process_csv.html',context=context)
-    
-    def post(self, request, task_id):
-        default_app.control.revoke(task_id, terminate=True, signal='SIGKILL')
-        return HttpResponse('Stopped')
-            
+           
 class UploadCSVView(View):
     def get(self, request):
         uploaded_csv_list = UploadedCSV.objects.all()

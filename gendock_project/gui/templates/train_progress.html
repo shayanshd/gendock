@@ -1,11 +1,19 @@
-<div class="container mx-auto">
-    <div id="logs" class="w-full bg-black text-white overflow-auto">
-        <div hx-get="{% url 'train_progress' %}" hx-target="#logs" hx-trigger="load delay:500ms" hx-swap="beforeend">
-            {% if new_lines|length > 0 %}
-            {% for line in new_lines %}
-            {{ line|linebreaksbr }}
-            {% endfor %}
-            {% endif %}
+<div class="relative pt-1" hx-get="{% url 'train_progress' task_id %}" hx-target="#mytarget" hx-trigger="load delay:300ms">
+    <div class="flex mb-2 items-center justify-between">
+        <div>
+            <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-teal-600 bg-teal-200">
+                Progress ID
+            </span>
+        </div>
+        <div class="text-right">
+            <span class="text-xs font-semibold inline-block text-teal-600">
+                {{ task_id }}
+            </span>
         </div>
     </div>
+    <div class="mb-6 h-1 w-full bg-neutral-200 dark:bg-neutral-600">
+        <div id="progress-bar" class="h-1 bg-green-500" style="width: {{value}}%;"></div>
+    </div>
+    <button id="cancel-task" class="px-4 py-2 bg-red-500 text-white rounded-lg"
+        hx-post="{% url 'train_progress' task_id %}" hx-target="#mytarget">Cancel Task</button>
 </div>

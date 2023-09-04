@@ -1,0 +1,11 @@
+<div class="container mx-auto">
+    <div id="logs" class="w-full bg-black text-white overflow-auto">
+        <div hx-get="{% url 'train_progress' %}" hx-target="#logs" hx-trigger="load delay:500ms" hx-swap="beforeend">
+            {% if new_lines|length > 0 %}
+            {% for line in new_lines %}
+            {{ line|linebreaksbr }}
+            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>

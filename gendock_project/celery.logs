@@ -1,34 +1,21 @@
-[2023-09-01 21:44:06,904: WARNING/MainProcess] Loading model architecture from rest/experiments/LSTM_Chem/model_arch.json ...
-[2023-09-01 21:44:07,413: WARNING/MainProcess] Loading model checkpoint from rest/experiments/LSTM_Chem/rest/checkpoints/LSTM_Chem-03-0.24.hdf5 ...
-[2023-09-01 21:44:07,423: WARNING/MainProcess] Loaded the Model.
-[2023-09-01 21:44:07,424: WARNING/MainProcess]   0%|          | 0/20 [00:00<?, ?it/s]
-[2023-09-01 21:44:08,980: WARNING/MainProcess]   5%|5         | 1/20 [00:01<00:29,  1.56s/it]
-[2023-09-01 21:44:09,624: WARNING/MainProcess]  10%|#         | 2/20 [00:02<00:18,  1.02s/it]
-[2023-09-01 21:44:10,279: WARNING/MainProcess]  20%|##        | 4/20 [00:02<00:09,  1.71it/s]
-[2023-09-01 21:44:10,978: WARNING/MainProcess]  25%|##5       | 5/20 [00:03<00:09,  1.61it/s]
-[2023-09-01 21:44:11,637: WARNING/MainProcess]  30%|###       | 6/20 [00:04<00:08,  1.58it/s]
-[2023-09-01 21:44:12,283: WARNING/MainProcess]  35%|###5      | 7/20 [00:04<00:08,  1.57it/s]
-[2023-09-01 21:44:12,906: WARNING/MainProcess]  40%|####      | 8/20 [00:05<00:07,  1.58it/s]
-[2023-09-01 21:44:13,071: WARNING/MainProcess]  45%|####5     | 9/20 [00:05<00:05,  2.04it/s]
-[2023-09-01 21:44:13,683: WARNING/MainProcess]  50%|#####     | 10/20 [00:06<00:05,  1.90it/s]
-[2023-09-01 21:44:13,857: WARNING/MainProcess]  55%|#####5    | 11/20 [00:06<00:03,  2.37it/s]
-[2023-09-01 21:44:14,513: WARNING/MainProcess]  60%|######    | 12/20 [00:07<00:03,  2.03it/s]
-[2023-09-01 21:44:15,183: WARNING/MainProcess]  65%|######5   | 13/20 [00:07<00:03,  1.83it/s]
-[2023-09-01 21:44:15,974: WARNING/MainProcess]  70%|#######   | 14/20 [00:08<00:03,  1.62it/s]
-[2023-09-01 21:44:16,616: WARNING/MainProcess]  75%|#######5  | 15/20 [00:09<00:03,  1.60it/s]
-[2023-09-01 21:44:17,249: WARNING/MainProcess]  80%|########  | 16/20 [00:09<00:02,  1.59it/s]
-[2023-09-01 21:44:17,995: WARNING/MainProcess]  95%|#########5| 19/20 [00:10<00:00,  2.41it/s]
-[2023-09-01 21:44:18,023: WARNING/MainProcess] 100%|##########| 20/20 [00:10<00:00,  1.89it/s]
-[2023-09-01 21:44:18,025: WARNING/MainProcess] 20
-[2023-09-01 21:44:18,026: WARNING/MainProcess] Validity: 
-[2023-09-01 21:44:18,026: WARNING/MainProcess]  
-[2023-09-01 21:44:18,026: WARNING/MainProcess] 0.00%
-[2023-09-01 21:44:18,029: ERROR/MainProcess] Task gui.tasks.generate_smiles[196df7b7-9286-4125-875e-12d2039c069e] raised unexpected: ZeroDivisionError('division by zero')
-Traceback (most recent call last):
-  File "/home/shayan/miniconda3/envs/tf/lib/python3.9/site-packages/celery/app/trace.py", line 477, in trace_task
-    R = retval = fun(*args, **kwargs)
-  File "/home/shayan/miniconda3/envs/tf/lib/python3.9/site-packages/celery/app/trace.py", line 760, in __protected_call__
-    return self.run(*args, **kwargs)
-  File "/home/shayan/Documents/gendock/gendock_project/gui/tasks.py", line 53, in generate_smiles
-    print('Uniqueness: ', f'{len(set(valid_smiles)) / len(valid_smiles):.2%}')
-ZeroDivisionError: division by zero
+[2023-09-04 23:04:20,441: WARNING/MainProcess] loading SMILES...
+[2023-09-04 23:04:20,441: WARNING/MainProcess] done.
+[2023-09-04 23:04:20,441: WARNING/MainProcess] tokenizing SMILES...
+[2023-09-04 23:04:20,441: WARNING/MainProcess]   0%|          | 0/975 [00:00<?, ?it/s]
+[2023-09-04 23:04:20,459: WARNING/MainProcess] 100%|##########| 975/975 [00:00<00:00, 54764.73it/s]
+[2023-09-04 23:04:20,460: WARNING/MainProcess] done.
+[2023-09-04 23:04:20,517: WARNING/MainProcess] Epoch 1/2
+[2023-09-04 23:04:22,645: WARNING/MainProcess] 1/4 [======>.......................] - ETA: 6s - loss: 3.8448
+[2023-09-04 23:04:22,734: WARNING/MainProcess] 3/4 [=====================>........] - ETA: 0s - loss: 3.5329
+[2023-09-04 23:04:29,178: WARNING/MainProcess] 
+Epoch 1: saving model to rest/experiments/LSTM_Chem/rest/checkpoints/LSTM_Chem-01-1.78.hdf5
+[2023-09-04 23:04:29,198: WARNING/MainProcess] 4/4 [==============================] - 9s 2s/step - loss: 3.2661 - val_loss: 1.7806
+[2023-09-04 23:04:29,319: WARNING/MainProcess] Epoch 2/2
+[2023-09-04 23:04:29,470: WARNING/MainProcess] 1/4 [======>.......................] - ETA: 0s - loss: 1.9226
+[2023-09-04 23:04:29,541: WARNING/MainProcess] 2/4 [==============>...............] - ETA: 0s - loss: 1.6469
+[2023-09-04 23:04:29,768: WARNING/MainProcess] 3/4 [=====================>........] - ETA: 0s - loss: 1.6058
+[2023-09-04 23:04:29,923: WARNING/MainProcess] 4/4 [==============================] - ETA: 0s - loss: 1.6188
+[2023-09-04 23:04:35,453: WARNING/MainProcess] 
+Epoch 2: saving model to rest/experiments/LSTM_Chem/rest/checkpoints/LSTM_Chem-02-1.62.hdf5
+[2023-09-04 23:04:35,470: WARNING/MainProcess] 4/4 [==============================] - 6s 2s/step - loss: 1.6188 - val_loss: 1.6158
+[2023-09-04 23:04:35,580: INFO/MainProcess] Task gui.tasks.start_training[0f0aaa53-fa5a-4de5-85d4-252b1c48993f] succeeded in 15.463970690998394s: 'DONE'

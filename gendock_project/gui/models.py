@@ -43,3 +43,18 @@ class CleanedSmile(models.Model):
     def __str__(self):
         return self.cleaned_file
     
+class TrainLog(models.Model):
+    task_id = models.CharField(max_length=50, unique=True)
+    epoch = models.IntegerField(default=0)
+    max_epoch = models.IntegerField(null=True)
+    train_loss = models.CharField(max_length=20, null=True)
+    val_loss = models.CharField(max_length=20, null=True)
+
+    TASK_STATUS_CHOICES = (
+    ('P', 'Processing'),
+    ('C', 'Completed'),
+    ('F', 'Failed'),
+    ('N', 'Not Started')
+    )
+    task_status = models.CharField(max_length=1, choices=TASK_STATUS_CHOICES, default='N')
+   

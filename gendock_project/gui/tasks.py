@@ -2,10 +2,10 @@
 import pandas as pd
 import os
 from rdkit import Chem, RDLogger
-from rdkit.Chem import MolStandardize
+from rdkit.Chem import MolStandardize, Descriptors
 from celery import shared_task
 from celery_progress.backend import ProgressRecorder
-from .models import UploadedCSV, CleanedSmile
+from .models import UploadedCSV, CleanedSmile, TrainLog
 from rest.lstm_chem.utils.config import process_config
 from rest.lstm_chem.data_loader import DataLoader
 from rest.lstm_chem.model import LSTMChem
@@ -133,11 +133,12 @@ def process_csv_task(self, pk_list):
         print(f'total smiles in dataset {csv_path}: ' + str(dataset1.shape[0]))
         dataset1['smiles'] = dataset1["smiles"]
         dataset1['length'] = dataset1["smiles"].str.len()
-
-        smiles = dataset1.drop_duplicates()["smiles"].tolist()
+        dataset1 = dataset1['smiles']
+        smiles = dataset1.drop_duplicates()
         total_smiles.extend(smiles)
         print(len(smiles))
     total_smiles = list(set(total_smiles))
+    
 
     
     print('total number of smiles: ' + str(len(total_smiles)))
@@ -165,7 +166,7 @@ def process_csv_task(self, pk_list):
             cl_smiles.append(cl_smi)
         if (i + 1) % 100 == 0:
             progress_recorder.set_progress(i + 1, len(total_smiles))
-
+    cl_smiles = list(set([s for s in cl_smiles if s]))
     print('done.')
     print(f'output SMILES num: {len(cl_smiles)}')
 
@@ -178,6 +179,7 @@ def process_csv_task(self, pk_list):
 
 @shared_task(bind=True)
 def start_training(self):
+  
     log_file_path = './celery.logs'  # Specify the correct path to your celery logs file
     
     # Clear the log file before training starts
@@ -186,14 +188,24 @@ def start_training(self):
 
     CONFIG_FILE = 'rest/experiments/LSTM_Chem/config.json'
     config = process_config(CONFIG_FILE)
+    tl = TrainLog.objects.create(task_id = self.request.id)  
+    tl.max_epoch = int(config.num_epochs) 
+    tl.save()
     modeler = LSTMChem(config, session='train')
     train_dl = DataLoader(config, data_type='train')
     valid_dl = copy(train_dl)
     valid_dl.data_type = 'valid'
-    trainer = LSTMChemTrainer(modeler, train_dl, valid_dl)
+    trainer = LSTMChemTrainer(modeler, train_dl, valid_dl,task_id = self.request.id)
     # Run trainer.train()
-    trainer.train()
+ 
+    h = trainer.train()
     # Save weights
+ 
+    tl.epoch = int(h.params['epochs'])
+    tl.val_loss = h.history['val_loss']
+    tl.train_loss = h.history['loss']
+    tl.task_status = 'C'
+    tl.save()
     trainer.model.save_weights('rest/experiments/LSTM_Chem/checkpoints/LSTM_Chem-baseline-model-full.hdf5')
 
     return 'DONE'  # Returning logs to access in the view
