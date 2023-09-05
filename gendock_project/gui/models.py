@@ -49,6 +49,7 @@ class TrainLog(models.Model):
     max_epoch = models.IntegerField(null=True)
     train_loss = models.CharField(max_length=20, null=True)
     val_loss = models.CharField(max_length=20, null=True)
+    cur_batch = models.IntegerField(default=0)
 
     TASK_STATUS_CHOICES = (
     ('P', 'Processing'),

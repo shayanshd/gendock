@@ -5,20 +5,25 @@ from gui.models import TrainLog
 
 
 class BCP(Callback):
-    batch_accuracy = [] # accuracy at given batch
-    batch_loss = [] # loss at given batch    
+  
     def __init__(self, task_id):
         super(BCP,self).__init__() 
         self.task_id = task_id
     def on_epoch_end(self, epoch, logs=None):                
-        BCP.batch_accuracy.append(logs.get('accuracy'))
-        BCP.batch_loss.append(logs.get('loss'))
+
         tl = TrainLog.objects.get(task_id = self.task_id)
         tl.epoch = epoch
         tl.val_loss = logs.get('val_loss')
         tl.train_loss = logs.get('loss')
         tl.task_status = 'P'
         tl.save()
+
+    def on_train_batch_end(self, batch, logs=None):
+
+        tl = TrainLog.objects.get(task_id = self.task_id)
+        print(logs)
+        print(batch)
+    
 
 
 class LSTMChemTrainer(object):

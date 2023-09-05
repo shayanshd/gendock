@@ -49,15 +49,18 @@ class TrainProgressView(View):
         tl = TrainLog.objects.get(task_id = task_id)
         epoch = tl.epoch
         epochs = tl.max_epoch
+        val_loss = tl.val_loss
+        train_loss = tl.train_loss
         print(epoch, epochs)
         percent_complete = int(100*epoch/epochs)
         print(percent_complete)
         if percent_complete == 100:
-            train_log = TrainLog.objects.get(task_id=task_id)           
-            return HttpResponse(f"<p class='mb-4'>CSV processing complete. The cleaned smiles file is: <em>{train_log}</em> </p>")
+            # train_log = TrainLog.objects.get(task_id=task_id)           
+            return HttpResponse(f"<p class='mb-4'>CSV processing complete. The cleaned smiles file is: <em>{tl}</em> </p>")
         
-        context = {'task_id':task_id, 'value': percent_complete}
-        return render(request, 'process_csv.html',context=context)
+        # context = {'task_id':task_id,'epoch':epoch,'epochs':epochs, 'val_loss':val_loss, 'train_loss':train_loss, 'value': percent_complete}
+        context = {'task_id':task_id,'progress':tl, 'value': percent_complete}
+        return render(request, 'train_progress.html',context=context)
     
     def post(self, request, task_id):
         default_app.control.revoke(task_id, terminate=True, signal='SIGKILL')

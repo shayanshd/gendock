@@ -1,4 +1,7 @@
+<!-- train_progress.html -->
+
 <div class="relative pt-1" hx-get="{% url 'train_progress' task_id %}" hx-target="#mytarget" hx-trigger="load delay:300ms">
+    <h1 class="text-3xl font-semibold mb-6">Training...</h1>
     <div class="flex mb-2 items-center justify-between">
         <div>
             <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-teal-600 bg-teal-200">
@@ -11,8 +14,17 @@
             </span>
         </div>
     </div>
+    <div class="mb-2">
+        Current Epoch: {{ progress.epoch }} / Total Epochs: {{ progress.max_epoch }}
+    </div>
+    <div class="mb-2">
+        Validation Loss: {{ progress.val_loss }}
+    </div>
+    <div class="mb-6">
+        Training Loss: {{ progress.train_loss }}
+    </div>
     <div class="mb-6 h-1 w-full bg-neutral-200 dark:bg-neutral-600">
-        <div id="progress-bar" class="h-1 bg-green-500" style="width: {{value}}%;"></div>
+        <div id="progress-bar" class="h-1 bg-green-500" style="width: {{ value }}%;"></div>
     </div>
     <button id="cancel-task" class="px-4 py-2 bg-red-500 text-white rounded-lg"
         hx-post="{% url 'train_progress' task_id %}" hx-target="#mytarget">Cancel Task</button>

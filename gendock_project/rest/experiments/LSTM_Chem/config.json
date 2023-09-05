@@ -1,9 +1,9 @@
 {
   "exp_name": "LSTM_Chem",
-  "data_filename": "./cleaned_smiles/26_clean.smi",
+  "data_filename": "./cleaned_smiles/27_clean.smi",
   "data_length": 0,
   "units": 256,
-  "num_epochs": 2,
+  "num_epochs": 3,
   "optimizer": "adam",
   "seed": 71,
   "batch_size": 256,
@@ -26,5 +26,5 @@
   "checkpoint_dir": "rest/experiments/LSTM_Chem/rest/checkpoints/",
   "train_smi_max_len": 134,
   "model_arch_filename": "rest/experiments/LSTM_Chem/model_arch.json",
-  "model_weight_filename": "rest/experiments/LSTM_Chem/rest/checkpoints/LSTM_Chem-02-1.74.hdf5"
+  "model_weight_filename": "rest/experiments/LSTM_Chem/rest/checkpoints/LSTM_Chem-03-1.63.hdf5"
 }
