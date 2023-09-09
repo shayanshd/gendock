@@ -22,7 +22,7 @@ class GenerateProgressView(View):
         current_gen = int(progress.get_info()['progress']['current'])
         total_gen = int(progress.get_info()['progress']['total'])
         context={'task_id':task_id, 'progress':percent_complete, 'current':current_gen, 'total':total_gen}
-        if result.successful():
+        if result.successful():           
             [validity, uniqueness, originality] = result.result
             context = {'task_id': task_id, 'validity': validity,
                         'uniqueness': uniqueness, 'originality': originality, 'rec_form':form}
@@ -32,14 +32,27 @@ class GenerateProgressView(View):
     def post(self, request, task_id):
         form = ReceptorConfForm(request.POST)
         if form.is_valid():
-            receptor_file = 
-            center_x = 
-            size_x = 
-            center_y = 
-            size_y = 
-            center_z = 
-            size_z = 
-            exhaustive_number = 
+            receptor_file = form.cleaned_data['receptor_file']
+            center_x = form.cleaned_data['center_x']
+            size_x = form.cleaned_data['size_x']
+            center_y = form.cleaned_data['center_y']
+            size_y = form.cleaned_data['size_y']
+            center_z = form.cleaned_data['center_z']
+            size_z = form.cleaned_data['size_z']
+            exhaustive_number = form.cleaned_data['exhaustive_number']
+            config_text = (
+                f'receptor = {receptor_file}\n'
+                f'center_x = {center_x}\n'
+                f'size_x = {size_x}\n'
+                f'center_y = {center_y}\n'
+                f'size_y = {size_y}\n'
+                f'center_z = {center_z}\n'
+                f'size_z = {size_z}\n'
+                f'exhaustiveness = {exhaustive_number}\n'
+            )
+
+            with open('rest/receptor_conf.txt', 'w') as config_file:
+                config_file.write(config_text)
             print(request.POST)
         return HttpResponse('DONE')
 
@@ -50,7 +63,6 @@ class GenerateSmilesView(View):
         return render(request, 'generate_smiles.html', {'form': form})
     
     def post(self, request):
-        print(request.POST)
         form = GenerateSmilesForm(request.POST)
         if form.is_valid():
             sample_number = form.cleaned_data['sample_number']
@@ -76,7 +88,6 @@ class TrainProgressView(View):
         percent_complete = int(100*tl.epoch/tl.max_epoch)
         batch_percent_complete = int(100*tl.cur_batch/tl.max_batch)
         if tl.task_status == 'C':
-            print(enumerate(zip(ast.literal_eval(tl.train_loss),ast.literal_eval(tl.val_loss))))
             context = {'task_id':task_id,'progress':tl, 'value': percent_complete, 
                        'batch_value':batch_percent_complete, 'loss':zip(list(range(1,len(ast.literal_eval(tl.train_loss))+1)),ast.literal_eval(tl.train_loss),ast.literal_eval(tl.val_loss))}
             
@@ -103,7 +114,6 @@ class TrainView(View):
     def post(self, request):
         cleaned_file = request.POST.get('cleaned_file')
         epochs = request.POST.get('epochs')
-        print(cleaned_file, epochs)
         if not cleaned_file or not epochs:
             return HttpResponse('<p class="text-red-600">Please enter a valid number of epochs.</p>')  # Redirect back to the train page
 
@@ -150,7 +160,6 @@ class ProcessCSVView(View):
             active_tasks = default_app.control.inspect().active()
             if not any(active_tasks.values()):
             # There are no active tasks, so we can start a new one
-                print(active_tasks.values())
                 task = process_csv_task.delay(pk_list)
                 return render(request, 'process_csv.html', context={'task_id': task.task_id, 'value' : 0})    
             return HttpResponse('Another task is already in progress.')

@@ -1,6 +1,2 @@
 id,gen,smile,source,score
-AAAA,0,CCCCCn1c(C)nc2cc(N)ccc21,generated,99.9
-AAAB,0,O=C(c1cc(-c2ccccc2)n[nH]1)N1CCN(c2ccccc2)CC1,generated,99.9
-AAAC,0,CC(NS(=O)(=O)c1cc(C(=O)N(C)C)ccc1Cl)C1CC1,generated,99.9
-AAAD,0,COc1ccc(C(=O)N(Cc2ccco2)CC(C)C)cc1C,generated,99.9
-AAAE,0,CCOC(=O)c1ccc(F)c(NC(=O)c2cccc(C)c2C)c1,generated,99.9
+AAAA,0,N,generated,99.9

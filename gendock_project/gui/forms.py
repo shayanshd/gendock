@@ -19,7 +19,7 @@ class GenerateSmilesForm(forms.Form):
             raise forms.ValidationError('Sample number must be greater than desired length.')
         
 class ReceptorConfForm(forms.Form):
-    receptor_file = forms.FileField(label='Choose Receptor File', required=True, widget=forms.ClearableFileInput(attrs={'accept': '.pdbqt', 'class': 'form-control border p-2 rounded-md'}))
+    receptor_file = forms.FileField(label='Choose Receptor File', required=True, widget=forms.ClearableFileInput(attrs={'accept': '.pdbqt', 'class': 'border p-2 rounded-md'}))
     center_x = forms.DecimalField(label='Center X', required=True, initial=0, widget=forms.NumberInput(attrs={'class': 'form-control w-full p-2 border rounded-md'}))
     size_x = forms.DecimalField(label='Size X', required=True, initial=0, widget=forms.NumberInput(attrs={'class': 'form-control w-full p-2 border rounded-md'}))
     center_y = forms.DecimalField(label='Center Y', required=True, initial=0, widget=forms.NumberInput(attrs={'class': 'form-control w-full p-2 border rounded-md'}))
