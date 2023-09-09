@@ -7,64 +7,92 @@ from celery.result import AsyncResult
 from celery_progress.backend import Progress
 from django.http import HttpResponse
 from celery.app import default_app
-from .forms import GenerateSmilesForm
+from .forms import GenerateSmilesForm, ReceptorConfForm
 import json
+import ast
 
-def generate_progress_view(request):
-    # Simulate progress data and results (replace with actual data)
-    progress_data = {
-        'progress_percentage': 50,
-        'status_message': 'Generating Smiles...',
-    }
+
+class GenerateProgressView(View):
+
+    def get(self, request, task_id):
+        form = ReceptorConfForm()
+        result = AsyncResult(task_id)
+        progress = Progress(AsyncResult(task_id)) 
+        percent_complete = int(progress.get_info()['progress']['percent'])
+        current_gen = int(progress.get_info()['progress']['current'])
+        total_gen = int(progress.get_info()['progress']['total'])
+        context={'task_id':task_id, 'progress':percent_complete, 'current':current_gen, 'total':total_gen}
+        if result.successful():
+            [validity, uniqueness, originality] = result.result
+            context = {'task_id': task_id, 'validity': validity,
+                        'uniqueness': uniqueness, 'originality': originality, 'rec_form':form}
+        
+        return render(request, 'generate_progress.html', context=context)
     
-    results_data = {
-        'generated_smiles': ['Smiles1', 'Smiles2', 'Smiles3'],
-    }
+    def post(self, request, task_id):
+        form = ReceptorConfForm(request.POST)
+        if form.is_valid():
+            receptor_file = 
+            center_x = 
+            size_x = 
+            center_y = 
+            size_y = 
+            center_z = 
+            size_z = 
+            exhaustive_number = 
+            print(request.POST)
+        return HttpResponse('DONE')
 
-    return render(request, 'generate_progress.html', {
-        'progress_data': progress_data,
-        'results_data': results_data,
-    })
-
-def generate_smiles_view(request):
-    if request.method == 'POST':
+class GenerateSmilesView(View):
+    
+    def get(self, request):
+        form = GenerateSmilesForm()
+        return render(request, 'generate_smiles.html', {'form': form})
+    
+    def post(self, request):
+        print(request.POST)
         form = GenerateSmilesForm(request.POST)
         if form.is_valid():
             sample_number = form.cleaned_data['sample_number']
             desired_length = form.cleaned_data['desired_length']
-
+            active_tasks = default_app.control.inspect().active()
+            if not any(active_tasks.values()):
             # Enqueue the Celery task with the provided arguments
-            generate_smiles.delay(sample_number, desired_length)
-
-            return redirect('generate_progress')  # Redirect to a success page
-    else:
-        form = GenerateSmilesForm()
-
-    return render(request, 'generate_smiles.html', {'form': form})
+                task = generate_smiles.delay(sample_number, desired_length)
+                return render(request, 'generate_smiles.html', context={'task_id':task.task_id, 'form':form})  # Redirect to a success page
+            return HttpResponse('Another task is already in progress.')
+        print(form.errors)
+        return render(request, 'generate_smiles.html', context={'form':form})
 
 
 class TrainProgressView(View):
 
     def get(self, request, task_id):
         tl = TrainLog.objects.get(task_id = task_id)
-        epoch = tl.epoch
-        epochs = tl.max_epoch
-        val_loss = tl.val_loss
-        train_loss = tl.train_loss
-        print(epoch, epochs)
-        percent_complete = int(100*epoch/epochs)
-        print(percent_complete)
-        if percent_complete == 100:
-            # train_log = TrainLog.objects.get(task_id=task_id)           
-            return HttpResponse(f"<p class='mb-4'>CSV processing complete. The cleaned smiles file is: <em>{tl}</em> </p>")
+        if tl.cur_batch > tl.max_batch:
+            tl.max_batch = tl.cur_batch
+            tl.save()
+
+        percent_complete = int(100*tl.epoch/tl.max_epoch)
+        batch_percent_complete = int(100*tl.cur_batch/tl.max_batch)
+        if tl.task_status == 'C':
+            print(enumerate(zip(ast.literal_eval(tl.train_loss),ast.literal_eval(tl.val_loss))))
+            context = {'task_id':task_id,'progress':tl, 'value': percent_complete, 
+                       'batch_value':batch_percent_complete, 'loss':zip(list(range(1,len(ast.literal_eval(tl.train_loss))+1)),ast.literal_eval(tl.train_loss),ast.literal_eval(tl.val_loss))}
+            
+            return render(request, 'train_progress.html',context=context)        
         
         # context = {'task_id':task_id,'epoch':epoch,'epochs':epochs, 'val_loss':val_loss, 'train_loss':train_loss, 'value': percent_complete}
-        context = {'task_id':task_id,'progress':tl, 'value': percent_complete}
+        context = {'task_id':task_id,'progress':tl, 'value': percent_complete, 'batch_value':batch_percent_complete}
         return render(request, 'train_progress.html',context=context)
     
     def post(self, request, task_id):
-        default_app.control.revoke(task_id, terminate=True, signal='SIGKILL')
-        return HttpResponse('Stopped')
+        tl = TrainLog.objects.get(task_id = task_id)
+        tl.task_status = 'F'
+        tl.save()
+        # default_app.control.revoke(task_id, terminate=True, signal='SIGKILL')
+        context = {'task_id':task_id,'progress':tl}
+        return render(request, 'train_progress.html',context=context)
 
 class TrainView(View):
     def get(self, request):  
