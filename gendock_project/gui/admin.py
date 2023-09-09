@@ -4,3 +4,4 @@ from . import models
 admin.site.register(models.UploadedCSV)
 admin.site.register(models.CleanedSmile)
 admin.site.register(models.TrainLog)
+admin.site.register(models.ReceptorConfiguration)

@@ -1,60 +1,52 @@
 # csv_processor/views.py
 from django.shortcuts import render, redirect
 from django.views import View
-from .models import UploadedCSV, CleanedSmile, TrainLog
+from .models import UploadedCSV, CleanedSmile, TrainLog, ReceptorConfiguration
 from .tasks import process_csv_task, start_training, generate_smiles
 from celery.result import AsyncResult
 from celery_progress.backend import Progress
 from django.http import HttpResponse
 from celery.app import default_app
-from .forms import GenerateSmilesForm, ReceptorConfForm
+from .forms import GenerateSmilesForm, ReceptorConfModelForm
 import json
 import ast
 
-
 class GenerateProgressView(View):
-
     def get(self, request, task_id):
-        form = ReceptorConfForm()
+        
         result = AsyncResult(task_id)
         progress = Progress(AsyncResult(task_id)) 
         percent_complete = int(progress.get_info()['progress']['percent'])
         current_gen = int(progress.get_info()['progress']['current'])
         total_gen = int(progress.get_info()['progress']['total'])
         context={'task_id':task_id, 'progress':percent_complete, 'current':current_gen, 'total':total_gen}
-        if result.successful():           
+        if result.successful():  
+            form = ReceptorConfModelForm()         
             [validity, uniqueness, originality] = result.result
             context = {'task_id': task_id, 'validity': validity,
                         'uniqueness': uniqueness, 'originality': originality, 'rec_form':form}
         
         return render(request, 'generate_progress.html', context=context)
-    
     def post(self, request, task_id):
-        form = ReceptorConfForm(request.POST)
+        form = ReceptorConfModelForm(request.POST, request.FILES)
+        print(request.POST, request.FILES)
+        
         if form.is_valid():
-            receptor_file = form.cleaned_data['receptor_file']
-            center_x = form.cleaned_data['center_x']
-            size_x = form.cleaned_data['size_x']
-            center_y = form.cleaned_data['center_y']
-            size_y = form.cleaned_data['size_y']
-            center_z = form.cleaned_data['center_z']
-            size_z = form.cleaned_data['size_z']
-            exhaustive_number = form.cleaned_data['exhaustive_number']
-            config_text = (
-                f'receptor = {receptor_file}\n'
-                f'center_x = {center_x}\n'
-                f'size_x = {size_x}\n'
-                f'center_y = {center_y}\n'
-                f'size_y = {size_y}\n'
-                f'center_z = {center_z}\n'
-                f'size_z = {size_z}\n'
-                f'exhaustiveness = {exhaustive_number}\n'
-            )
-
-            with open('rest/receptor_conf.txt', 'w') as config_file:
-                config_file.write(config_text)
+            receptor_config = ReceptorConfiguration()
+            # receptor_config.receptor_file = form.cleaned_data['receptor_file']
+        # Populate model fields with data from the form
+            receptor_config.center_x = form.cleaned_data['center_x']
+            receptor_config.size_x = form.cleaned_data['size_x']
+            receptor_config.center_y = form.cleaned_data['center_y'] 
+            receptor_config.size_y = form.cleaned_data['size_y']
+            receptor_config.center_z = form.cleaned_data['center_z']
+            receptor_config.size_z = form.cleaned_data['size_z']
+            receptor_config.exhaustive_number = form.cleaned_data['exhaustive_number']
+            receptor_config.save()
             print(request.POST)
-        return HttpResponse('DONE')
+        else:
+            print(form.errors)
+        return render(request, 'generate_rec_submit.html', context={'rec_form':form})
 
 class GenerateSmilesView(View):
     
@@ -75,7 +67,6 @@ class GenerateSmilesView(View):
             return HttpResponse('Another task is already in progress.')
         print(form.errors)
         return render(request, 'generate_smiles.html', context={'form':form})
-
 
 class TrainProgressView(View):
 

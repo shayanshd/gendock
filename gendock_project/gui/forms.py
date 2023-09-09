@@ -1,5 +1,6 @@
 # forms.py
 from django import forms
+from .models import ReceptorConfiguration
 
 class GenerateSmilesForm(forms.Form):
     sample_number = forms.IntegerField(
@@ -18,12 +19,28 @@ class GenerateSmilesForm(forms.Form):
         if sample_number and desired_length and sample_number <= desired_length:
             raise forms.ValidationError('Sample number must be greater than desired length.')
         
-class ReceptorConfForm(forms.Form):
-    receptor_file = forms.FileField(label='Choose Receptor File', required=True, widget=forms.ClearableFileInput(attrs={'accept': '.pdbqt', 'class': 'border p-2 rounded-md'}))
-    center_x = forms.DecimalField(label='Center X', required=True, initial=0, widget=forms.NumberInput(attrs={'class': 'form-control w-full p-2 border rounded-md'}))
-    size_x = forms.DecimalField(label='Size X', required=True, initial=0, widget=forms.NumberInput(attrs={'class': 'form-control w-full p-2 border rounded-md'}))
-    center_y = forms.DecimalField(label='Center Y', required=True, initial=0, widget=forms.NumberInput(attrs={'class': 'form-control w-full p-2 border rounded-md'}))
-    size_y = forms.DecimalField(label='Size Y', required=True, initial=0, widget=forms.NumberInput(attrs={'class': 'form-control bw-full p-2 border rounded-md'}))
-    center_z = forms.DecimalField(label='Center Z', required=True, initial=0, widget=forms.NumberInput(attrs={'class': 'form-control w-full p-2 border rounded-md'}))
-    size_z = forms.DecimalField(label='Size Z', required=True, initial=0, widget=forms.NumberInput(attrs={'class': 'form-control w-full p-2 border rounded-md'}))
-    exhaustive_number = forms.IntegerField(label='Exhaustive Number', required=True, initial=8, widget=forms.NumberInput(attrs={'class': 'form-control block text-gray-700 font-bold mb-2'}))
+class ReceptorConfModelForm(forms.ModelForm):
+    class Meta:
+        model = ReceptorConfiguration  # Set the model to your ReceptorConfiguration model
+        fields =  '__all__'
+        
+        labels = {
+            'receptor_file': 'Choose Receptor File',
+            'center_x': 'Center X',
+            'size_x': 'Size X',
+            'center_y': 'Center Y',
+            'size_y': 'Size Y',
+            'center_z': 'Center Z',
+            'size_z': 'Size Z',
+            'exhaustive_number': 'Exhaustive Number',
+        }
+        widgets = {
+            'receptor_file': forms.ClearableFileInput(attrs={'accept': '.pdbqt', 'class': 'border p-2 rounded-md'}),
+            'center_x': forms.NumberInput(attrs={'class': 'w-full p-2 border rounded-md'}),
+            'size_x': forms.NumberInput(attrs={'class': 'w-full p-2 border rounded-md'}),
+            'center_y': forms.NumberInput(attrs={'class': ' w-full p-2 border rounded-md'}),
+            'size_y': forms.NumberInput(attrs={'class': ' w-full p-2 border rounded-md'}),
+            'center_z': forms.NumberInput(attrs={'class': ' w-full p-2 border rounded-md'}),
+            'size_z': forms.NumberInput(attrs={'class': ' w-full p-2 border rounded-md'}),
+            'exhaustive_number': forms.NumberInput(attrs={'class': ' block text-gray-700 font-bold mb-2'}),
+        }

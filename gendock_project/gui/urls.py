@@ -9,5 +9,6 @@ urlpatterns = [
     path('train/', TrainView.as_view(), name='train'),
     path('train-progress/<task_id>', TrainProgressView.as_view(), name='train_progress'),
     path('generate/', GenerateSmilesView.as_view(), name='generate'),
-     path('generate/progress/<task_id>', GenerateProgressView.as_view(), name='generate_progress'),
+    path('generate/progress/<task_id>', GenerateProgressView.as_view(), name='generate_progress'),
+    path('generate/progress/<task_id>/submit', GenerateProgressView.as_view(), name='generate_submit'),
 ]
