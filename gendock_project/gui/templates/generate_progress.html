@@ -1,18 +1,149 @@
-{% extends 'base.html' %}
-
-{% block title %}Generate Progress{% endblock %}
-
-{% block content %}
-<div class="container mx-auto py-8">
+{% if not validity %}
+<div class="container mx-auto" hx-get="{% url 'generate_progress' task_id %}" hx-target="#gen-progress"
+    hx-trigger="load delay:300ms">
     <h1 class="text-3xl font-semibold mb-6">Generate Progress</h1>
-    
-    <div id="progress-container">
-        <p>Generating Smiles...</p>
-        <!-- You can display progress information here -->
+
+    <div class="w-full bg-gray-300">
+        <div class="relative w-full bg-green-500 text-center py-2 text-white" style="width: {{ progress }}%;">
+            <span class="text-xs font-semibold">{{ progress }}%</span>
+        </div>
     </div>
-    
-    <div id="results-container">
-        <!-- Display generated Smiles results here -->
+
+    <div class="mt-4 text-center">
+        <p class="text-lg font-semibold">{{ current }} / {{ total }}</p>
     </div>
 </div>
-{% endblock %}
+{% else %}
+<div class="container mx-auto">
+    <h1 class="text-3xl font-semibold mb-6">Generation result on {{ total }} smiles:</h1>
+
+    <!-- Display validity, uniqueness, and originality here -->
+    <div class="mb-4">
+        <p class="text-lg font-semibold">Validity: {{ validity }}</p>
+        <p class="text-lg font-semibold">Uniqueness: {{ uniqueness }}</p>
+        <p class="text-lg font-semibold">Originality: {{ originality }}</p>
+    </div>
+    <div id="recept-resp" class="mb-6">
+        <div id="validation-message" class="text-red-500 mt-2"></div>
+    </div>
+    {% if validity != 0 %}
+    <!-- Add buttons for Configure Receptor and Start Docking -->
+    <div class="mb-6">
+        <button id="configure-receptor-btn"
+            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Configure Receptor</button>
+        <button class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 ml-4">Start Docking</button>
+    </div>
+    <div id="configure-receptor-modal" class="fixed inset-0 z-10 hidden overflow-auto bg-black bg-opacity-50">
+        <div class="relative p-8 bg-white w-96 mx-auto my-20 rounded-lg shadow-md">
+            <!-- Modal Close Button -->
+            <button id="close-configure-receptor-modal"
+                class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">
+                <svg class="h-4 w-4" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+
+            <h2 class="text-xl font-semibold mb-4">Configure Receptor</h2>
+            <form hx-post="{% url 'generate_progress' task_id %}" hx-target="#recept-resp">
+                {% csrf_token %}
+                {{ rec_form.non_field_errors }}
+
+                <div class="mb-4">
+                    {{ rec_form.receptor_file.label_tag }}
+                    {{ rec_form.receptor_file }}
+                </div>
+
+                <!-- Center and Size Inputs -->
+                <div class="grid grid-cols-4 gap-4 mb-4">
+                    {{ rec_form.center_x.label_tag }}
+                    {{ rec_form.center_x }}
+                    {{ rec_form.size_x.label_tag }}
+                    {{ rec_form.size_x }}
+                    {{ rec_form.center_y.label_tag }}
+                    {{ rec_form.center_y }}
+                    {{ rec_form.size_y.label_tag }}
+                    {{ rec_form.size_y }}
+                    {{ rec_form.center_z.label_tag }}
+                    {{ rec_form.center_z }}
+                    {{ rec_form.size_z.label_tag }}
+                    {{ rec_form.size_z }}
+                    <!-- Add similar fields for Y and Z -->
+                </div>
+
+                <!-- Exhaustive Number Input -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    {{ rec_form.exhaustive_number.label_tag }}
+                    {{ rec_form.exhaustive_number }}
+                </div>
+
+                <!-- Modal Action Buttons -->
+                <div class="flex justify-end">
+                    <button id="done-configure-receptor" type="submit"
+                        class="px-4 py-2 bg-green-500 text-white rounded-lg mr-4">
+                        Done
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+    </div>
+
+    <!-- JavaScript to Handle Modal Interaction -->
+    <script>
+        // Open the modal when the "Configure Receptor" button is clicked
+        document.getElementById('configure-receptor-btn').addEventListener('click', function () {
+            document.getElementById('configure-receptor-modal').classList.remove('hidden');
+        });
+
+        document.getElementById('close-configure-receptor-modal').addEventListener('click', function () {
+            document.getElementById('configure-receptor-modal').classList.add('hidden');
+        });
+
+        // Close the modal when the "Done" button is clicked
+        document.getElementById('done-configure-receptor').addEventListener('click', function () {
+            if (validateReceptorForm()) {
+                document.getElementById('configure-receptor-modal').classList.add('hidden');
+                // Clear any previous validation message
+                document.getElementById('validation-message').textContent = '';
+            } else {
+                // Display a validation message within the modal
+                const validationMessage = 'Please fill in all fields and select a receptor file.';
+                document.getElementById('validation-message').textContent = validationMessage;
+            }
+            // Handle form submission or data processing here
+            // ...
+            // After processing, you can close the modal
+            document.getElementById('configure-receptor-modal').classList.add('hidden');
+        });
+        function validateReceptorForm() {
+        const receptorFile = document.getElementById('id_receptor_file');
+        const centerX = document.getElementById('id_center_x');
+        const sizeX = document.getElementById('id_size_x');
+        const centerY = document.getElementById('id_center_y');
+        const sizeY = document.getElementById('id_size_y');
+        const centerZ = document.getElementById('id_center_z');
+        const sizeZ = document.getElementById('id_size_z');
+        // Add similar lines for other fields (center_y, size_y, center_z, size_z, exhaustive_number)
+
+        if (
+            receptorFile.value.trim() === '' ||
+            centerX.value.trim() === '' ||
+            sizeX.value.trim() === '' ||
+            centerY.value.trim() === '' ||
+            sizeY.value.trim() === '' ||
+            centerZ.value.trim() === '' ||
+            sizeZ.value.trim() === ''
+            // Add similar conditions for other fields
+        ) {
+            // At least one required field is empty
+            return false;
+        }
+        return true;
+    }
+    </script>
+    {% endif %}
+
+    <!-- You can style this section as needed -->
+</div>
+{% endif %}

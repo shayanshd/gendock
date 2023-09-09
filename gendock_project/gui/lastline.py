@@ -6,17 +6,9 @@
 #         new_lines = file.readlines()  # Read all new lines
         
 #         # Update the last_position to the current end of the file
-#         last_position = file.tell()
-    
-#     return new_lines, last_position
-
-# filename = 'gendock_project/celery.logs'
-# last_position = 0  # You can initialize this to the last read position
-# new_lines, last_position = read_new_lines(filename, last_position)
-
-# for line in new_lines:
-#     # Process each new line as needed
-#     print(line)
-
-dic = {"hi":[]}
-print(dic[list(dic)[0]]==[])
+l1 = ['ads','b1','c4']
+l2 = ['x','y','z']
+r = list(range(len(l1)))
+# enumerate(zip(l1,l2))
+a,b,c = zip(l1,l2,r)
+print(a)

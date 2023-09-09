@@ -50,6 +50,7 @@ class TrainLog(models.Model):
     train_loss = models.CharField(max_length=20, null=True)
     val_loss = models.CharField(max_length=20, null=True)
     cur_batch = models.IntegerField(default=0)
+    max_batch = models.IntegerField(default=1)
 
     TASK_STATUS_CHOICES = (
     ('P', 'Processing'),

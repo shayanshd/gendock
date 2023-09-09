@@ -31,9 +31,8 @@ class GenProcess:
         selected_fingerprints = mol_fingerprints[0:5]
         remaining_mols = list_of_mols[5:]
         remaining_fingerprints = mol_fingerprints[5:]
-
         similarity_threshold = .05
-        while len(selected_mols) < desired_length:
+        while len(selected_mols) < desired_length :
             for fingerprint, mol in zip(remaining_fingerprints, remaining_mols):
                 max_similarity = np.max(DataStructs.BulkTanimotoSimilarity(fingerprint, selected_fingerprints))
                 if (max_similarity <= similarity_threshold) and (max_similarity < 1):
@@ -42,6 +41,10 @@ class GenProcess:
             # print("Completed loop with threshold at: ", similarity_threshold, ". Length is currently: ",
             #       len(selected_mols))
             similarity_threshold += .05
+            print(similarity_threshold)
+            if similarity_threshold >= 1:
+                break
+            # print([len(list_of_mols),len(selected_mols),len(mol_fingerprints),len(selected_fingerprints)])
         return selected_mols
 
     def iterate_alpha(alpha_code):
@@ -75,7 +78,7 @@ class GenProcess:
             new_code += chr(number)
         return new_code
 
-    def append_to_tracking_table(master_table, mols_to_append, source, generation):
+    def append_to_tracking_table(master_table, mols_to_append, source, generation, cleaned_smiles):
         # Assign IDs for tracking to each mol, and assign a pandas table entry for each
         mols_to_export = []
         rows_list = []
@@ -89,7 +92,7 @@ class GenProcess:
             key = master_table_gen_max_id['id'].keys()[0]
             id_code = GenProcess.iterate_alpha(str(master_table_gen_max_id['id'][key]))
 
-        training_data = pd.read_csv('./datasets/all_smiles_clean.smi', header=None)
+        training_data = pd.read_csv(cleaned_smiles, header=None)
         training_set = set(list(training_data[0]))
 
         for mol in mols_to_append:
@@ -125,10 +128,10 @@ class GenProcess:
             batches = (len(mols_for_export) // 1000) + 1
             for i in range(0, batches):
                 batch_to_export = mols_for_export[i * batch_size:(i + 1) * batch_size]
-                w = Chem.SDWriter('./generations/gen' + str(generation) + '_batch_' + str(i + 1) + '.sdf')
+                w = Chem.SDWriter('rest/generations/gen' + str(generation) + '_batch_' + str(i + 1) + '.sdf')
                 for m in batch_to_export: w.write(m)
         else:
-            w = Chem.SDWriter('./generations/gen' + str(generation) + '.sdf')
+            w = Chem.SDWriter('rest/generations/gen' + str(generation) + '.sdf')
             for m in mols_for_export:
                 w.write(m)
 

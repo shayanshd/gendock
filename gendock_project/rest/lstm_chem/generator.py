@@ -1,6 +1,7 @@
 from tqdm import tqdm
 import numpy as np
 from rest.lstm_chem.utils.smiles_tokenizer2 import SmilesTokenizer
+from celery_progress.backend import ProgressRecorder
 
 
 class LSTMChemGenerator(object):
@@ -26,10 +27,11 @@ class LSTMChemGenerator(object):
         streched_probs = np.exp(streched) / np.sum(np.exp(streched))
         return np.random.choice(range(len(streched)), p=streched_probs)
 
-    def sample(self, num=1, start='G'):
+    def sample(self,progress_recorder, num=1, start='G'):
         sampled = []
         if self.session == 'generate':
-            for _ in tqdm(range(num)):
+            for i in tqdm(range(num)):
+                progress_recorder.set_progress(i + 1, num)
                 sampled.append(self._generate(start))
             return sampled
         else:

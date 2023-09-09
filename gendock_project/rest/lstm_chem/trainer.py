@@ -21,8 +21,11 @@ class BCP(Callback):
     def on_train_batch_end(self, batch, logs=None):
 
         tl = TrainLog.objects.get(task_id = self.task_id)
-        print(logs)
+        tl.cur_batch = batch
         print(batch)
+        tl.save()
+        if tl.task_status == 'F':
+            self.model.stop_training = True
     
 
 
@@ -78,9 +81,9 @@ class LSTMChemTrainer(object):
                 f'{self.config.exp_name}-{self.config.num_epochs:02}*.hdf5')
         )[0]
 
-        assert os.path.exists(last_weight_file)
-        self.config.model_weight_filename = last_weight_file
+        # assert os.path.exists(last_weight_file)
+        # self.config.model_weight_filename = last_weight_file
 
-        with open(os.path.join(self.config.exp_dir, 'config.json'), 'w') as f:
-            f.write(self.config.toJSON(indent=2))
-            return history
+        # with open(os.path.join(self.config.exp_dir, 'config.json'), 'w') as f:
+        #     f.write(self.config.toJSON(indent=2))
+        return history

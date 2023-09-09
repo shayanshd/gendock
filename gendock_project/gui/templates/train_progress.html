@@ -1,7 +1,17 @@
 <!-- train_progress.html -->
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.15/dist/tailwind.min.css" rel="stylesheet">
+</head>
 
-<div class="relative pt-1" hx-get="{% url 'train_progress' task_id %}" hx-target="#mytarget" hx-trigger="load delay:300ms">
+{% if progress.task_status != 'C' %}
+<div class="relative pt-1" hx-get="{% url 'train_progress' task_id %}" hx-target="#mytarget"
+    hx-trigger="load delay:300ms">
+    {% if progress.task_status == 'F' %}
+    <h1 class="text-3xl font-semibold mb-6 text-red-600">Stopping the training session, Saving weights ...</h1>
+    {% else %}
     <h1 class="text-3xl font-semibold mb-6">Training...</h1>
+    {% endif %}
     <div class="flex mb-2 items-center justify-between">
         <div>
             <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-teal-600 bg-teal-200">
@@ -15,17 +25,66 @@
         </div>
     </div>
     <div class="mb-2">
-        Current Epoch: {{ progress.epoch }} / Total Epochs: {{ progress.max_epoch }}
-    </div>
-    <div class="mb-2">
         Validation Loss: {{ progress.val_loss }}
     </div>
     <div class="mb-6">
         Training Loss: {{ progress.train_loss }}
     </div>
-    <div class="mb-6 h-1 w-full bg-neutral-200 dark:bg-neutral-600">
-        <div id="progress-bar" class="h-1 bg-green-500" style="width: {{ value }}%;"></div>
+    <div class="flex mb-2 items-center justify-between">
+        <div>
+            <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-teal-600 bg-teal-200">
+                epoch number
+            </span>
+        </div>
+        <div class="text-right">
+            <span class="text-xs font-semibold inline-block text-teal-600">
+                {{ progress.epoch }} / {{ progress.max_epoch }}
+            </span>
+        </div>
     </div>
-    <button id="cancel-task" class="px-4 py-2 bg-red-500 text-white rounded-lg"
-        hx-post="{% url 'train_progress' task_id %}" hx-target="#mytarget">Cancel Task</button>
+    <div class="mb-6 h-2 w-full bg-neutral-200 dark:bg-neutral-600">
+        <div id="progress-bar-value" class="h-2 bg-green-500" style="width: {{ value }}%;"></div>
+    </div>
+    <div class="flex mb-2 items-center justify-between">
+        <div>
+            <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-teal-600 bg-teal-200">
+                batch number
+            </span>
+        </div>
+        <div class="text-right">
+            <span class="text-xs font-semibold inline-block text-teal-600">
+                {{ progress.cur_batch }} / {{ progress.max_batch }}
+            </span>
+        </div>
+    </div>
+    <div class="mb-6 h-1 w-full bg-neutral-200 dark:bg-neutral-600">
+        <div id="progress-bar-batch" class="h-1 bg-blue-500" style="width: {{ batch_value }}%;"></div>
+    </div>
+    <form id="cancel-form" hx-post="{% url 'train_progress' task_id %}" hx-target="#mytarget" hx-swap="innerHTML">
+        {% csrf_token %}
+        <button id="cancel-task" class="px-4 py-2 bg-red-500 text-white rounded-lg">Cancel Task</button>
+    </form>
 </div>
+{% else %}
+<div class="mt-6">
+    <h2 class="text-xl font-semibold mb-2">Training Results</h2>
+    <table class="w-full border-collapse border border-gray-300">
+        <thead>
+            <tr>
+                <th class="py-2 px-1 bg-gray-200 border border-gray-300">Epoch</th>
+                <th class="py-2 px-5 bg-gray-200 border border-gray-300">Validation Loss</th>
+                <th class="py-2 px-5 bg-gray-200 border border-gray-300">Training Loss</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for epoch,train_loss,val_loss in loss %}
+            <tr>
+                <td class="py-2 px-1 border border-gray-300">{{ epoch }}</td>
+                <td class="py-2 px-5 border border-gray-300">{{ val_loss }}</td>
+                <td class="py-2 px-5 border border-gray-300">{{ train_loss }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
