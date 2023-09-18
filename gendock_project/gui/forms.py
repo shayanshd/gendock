@@ -1,6 +1,7 @@
 # forms.py
 from django import forms
 from .models import ReceptorConfiguration
+from django.core.exceptions import ValidationError
 
 class GenerateSmilesForm(forms.Form):
     sample_number = forms.IntegerField(
@@ -44,3 +45,12 @@ class ReceptorConfModelForm(forms.ModelForm):
             'size_z': forms.NumberInput(attrs={'class': ' w-full p-2 border rounded-md'}),
             'exhaustive_number': forms.NumberInput(attrs={'class': ' block text-gray-700 font-bold mb-2'}),
         }
+
+        def clean(self):
+            cleaned_data = super().clean()
+            receptor_file = cleaned_data.get('receptor_file')
+
+            if not receptor_file:
+                raise ValidationError('Please choose a receptor file.')
+
+            return cleaned_data

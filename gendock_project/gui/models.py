@@ -61,7 +61,7 @@ class TrainLog(models.Model):
     task_status = models.CharField(max_length=1, choices=TASK_STATUS_CHOICES, default='N')
    
 class ReceptorConfiguration(models.Model):
-    receptor_file = models.FileField(upload_to='receptor_files/', default='')
+    receptor_file = models.FileField(upload_to='receptor_files/')
     center_x = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     size_x = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     center_y = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -72,3 +72,11 @@ class ReceptorConfiguration(models.Model):
 
     def __str__(self):
         return f'Receptor Configuration {self.id}'
+    
+    def delete(self, *args, **kwargs):
+        # Delete the CSV file from the filesystem
+        if self.receptor_file:
+            try:
+                os.remove(self.receptor_file.path)
+            except:
+                print('csv file not found')

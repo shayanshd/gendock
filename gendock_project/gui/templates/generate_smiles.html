@@ -8,12 +8,12 @@
         <div class="pr-20">
             <h1 class="text-3xl font-semibold mb-6">Generate Smiles</h1>
 
-            <form method="post">
+            <form method="post" action="">
                 {% csrf_token %}
 
                 <div class="mb-4">
-                    <label for="{{ form.sample_number.id_for_label }}"
-                        class="block text-gray-700 font-bold mb-2">Sample Number</label>
+                    <label for="{{ form.sample_number.id_for_label }}" class="block text-gray-700 font-bold mb-2">Sample
+                        Number</label>
                     {{ form.sample_number }}
                 </div>
 
@@ -24,15 +24,16 @@
                 </div>
 
                 <div class="flex justify-end">
-                    <button type="submit"
+                    <button name="submit_length" type="submit"
                         class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Generate</button>
+                </div>
+                <!-- Display non-field errors in a styled div -->
+                <div class="text-red-600 mt-4">
+                    {{ form.non_field_errors }}
                 </div>
             </form>
 
-            <!-- Display non-field errors in a styled div -->
-            <div class="text-red-600 mt-4">
-                {{ form.non_field_errors }}
-            </div>
+
         </div>
 
         {% if task_id %}

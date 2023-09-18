@@ -146,7 +146,6 @@ gendock_project/uploads/dataset_v1.csv
 gendock_project/uploads/datatest.csv
 gendock_project/uploads/datatest2.csv
 gendock_project/rest/datasets/datatest2.csv
-gendock_project/rest/experiments/LSTM_Chem/checkpoints/LSTM_Chem-baseline-model-full.hdf5
 gendock_project/rest/experiments/LSTM_Chem/logs/train/events.out.tfevents.1693869717.shayan-ROG.436006.6.v2
 gendock_project/rest/experiments/LSTM_Chem/logs/validation/events.out.tfevents.1693869719.shayan-ROG.436006.7.v2
 gendock_project/rest/experiments/LSTM_Chem/rest/checkpoints/LSTM_Chem-02-1.69.hdf5
@@ -183,3 +182,14 @@ gendock_project/gui/__pycache__/models.cpython-39.pyc
 gendock_project/gui/__pycache__/tasks.cpython-39.pyc
 gendock_project/gui/__pycache__/urls.cpython-39.pyc
 gendock_project/gui/__pycache__/views.cpython-39.pyc
+gendock_project/gui/__pycache__/forms.cpython-39.pyc
+gendock_project/gui/__pycache__/models.cpython-39.pyc
+gendock_project/gui/__pycache__/urls.cpython-39.pyc
+gendock_project/gui/__pycache__/views.cpython-39.pyc
+gendock_project/gui/__pycache__/forms.cpython-39.pyc
+gendock_project/gui/__pycache__/models.cpython-39.pyc
+gendock_project/gui/__pycache__/urls.cpython-39.pyc
+gendock_project/gui/__pycache__/views.cpython-39.pyc
+gendock_project/gui/migrations/__pycache__/0022_alter_receptorconfiguration_receptor_file.cpython-39.pyc
+gendock_project/gui/migrations/__pycache__/0023_alter_receptorconfiguration_receptor_file.cpython-39.pyc
+gendock_project/gui/migrations/__pycache__/0024_alter_receptorconfiguration_receptor_file.cpython-39.pyc

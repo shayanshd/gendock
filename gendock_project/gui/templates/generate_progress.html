@@ -45,45 +45,46 @@
             </button>
 
             <h2 class="text-xl font-semibold mb-4">Configure Receptor</h2>
-            <form enctype="multipart/form-data" hx-post="{% url 'generate_progress' task_id %}" hx-target="#recept-resp">
-                {% csrf_token %}
+            <form hx-post="{% url 'generate_progress' task_id %}" hx-target="#validation-message" hx-encoding="multipart/form-data"
+            enctype="multipart/form-data">
+              {% csrf_token %}
 
                 <div class="mb-4">
-                    {{ rec_form.receptor_file.label_tag }}
-                    {{ rec_form.receptor_file }}
+                    {{ form.receptor_file.label_tag }}
+                    {{ form.receptor_file }}
                 </div>
 
                 <!-- Center and Size Inputs -->
                 <div class="grid grid-cols-4 gap-4 mb-4">
-                    {{ rec_form.center_x.label_tag }}
-                    {{ rec_form.center_x }}
-                    {{ rec_form.size_x.label_tag }}
-                    {{ rec_form.size_x }}
-                    {{ rec_form.center_y.label_tag }}
-                    {{ rec_form.center_y }}
-                    {{ rec_form.size_y.label_tag }}
-                    {{ rec_form.size_y }}
-                    {{ rec_form.center_z.label_tag }}
-                    {{ rec_form.center_z }}
-                    {{ rec_form.size_z.label_tag }}
-                    {{ rec_form.size_z }}
+                    {{ form.center_x.label_tag }}
+                    {{ form.center_x }}
+                    {{ form.size_x.label_tag }}
+                    {{ form.size_x }}
+                    {{ form.center_y.label_tag }}
+                    {{ form.center_y }}
+                    {{ form.size_y.label_tag }}
+                    {{ form.size_y }}
+                    {{ form.center_z.label_tag }}
+                    {{ form.center_z }}
+                    {{ form.size_z.label_tag }}
+                    {{ form.size_z }}
                     <!-- Add similar fields for Y and Z -->
                 </div>
 
                 <!-- Exhaustive Number Input -->
                 <div class="grid grid-cols-2 gap-4 mb-4">
-                    {{ rec_form.exhaustive_number.label_tag }}
-                    {{ rec_form.exhaustive_number }}
+                    {{ form.exhaustive_number.label_tag }}
+                    {{ form.exhaustive_number }}
                 </div>
                 
                 <!-- Modal Action Buttons -->
                 <div class="flex justify-end">
-                    <button id="done-configure-receptor" type="submit"
+                    <button name="submit_conf" id="done-configure-receptor" type="submit"
                         class="px-4 py-2 bg-green-500 text-white rounded-lg mr-4">
                         Done
                     </button>
                 </div>
-                {{ rec_form.non_field_errors }}
+                {{ form.non_field_errors }}
             </form>
         </div>
         

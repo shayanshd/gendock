@@ -24,29 +24,41 @@ class GenerateProgressView(View):
             form = ReceptorConfModelForm()         
             [validity, uniqueness, originality] = result.result
             context = {'task_id': task_id, 'validity': validity,
-                        'uniqueness': uniqueness, 'originality': originality, 'rec_form':form}
+                        'uniqueness': uniqueness, 'originality': originality, 'form':form}
         
         return render(request, 'generate_progress.html', context=context)
     def post(self, request, task_id):
+        
         form = ReceptorConfModelForm(request.POST, request.FILES)
-        print(request.POST, request.FILES)
+        # print(request.POST, request.FILES)
         
         if form.is_valid():
-            receptor_config = ReceptorConfiguration()
-            # receptor_config.receptor_file = form.cleaned_data['receptor_file']
-        # Populate model fields with data from the form
-            receptor_config.center_x = form.cleaned_data['center_x']
-            receptor_config.size_x = form.cleaned_data['size_x']
-            receptor_config.center_y = form.cleaned_data['center_y'] 
-            receptor_config.size_y = form.cleaned_data['size_y']
-            receptor_config.center_z = form.cleaned_data['center_z']
-            receptor_config.size_z = form.cleaned_data['size_z']
-            receptor_config.exhaustive_number = form.cleaned_data['exhaustive_number']
-            receptor_config.save()
-            print(request.POST)
+            existing_instance = ReceptorConfiguration.objects.filter(receptor_file__icontains=form.cleaned_data['receptor_file'].name).first()
+
+            if existing_instance:
+                # Delete the previous instance
+                existing_instance.delete()
+            form.save()
+            latest_config = ReceptorConfiguration.objects.latest('id')
+
+            # Define the file path for the receptor file
+            file_path = latest_config.receptor_file.path
+
+            # Open and write the configuration to the file
+            with open('rest/receptor_conf.txt', 'w') as config_file:
+                config_file.write(f'receptor = {file_path}\n')
+                config_file.write(f'center_x = {latest_config.center_x}\n')
+                config_file.write(f'size_x = {latest_config.size_x}\n')
+                config_file.write(f'center_y = {latest_config.center_y}\n')
+                config_file.write(f'size_y = {latest_config.size_y}\n')
+                config_file.write(f'center_z = {latest_config.center_z}\n')
+                config_file.write(f'size_z = {latest_config.size_z}\n')
+                config_file.write(f'exhaustiveness = {latest_config.exhaustive_number}\n')
+            return HttpResponse('<p class="text-green-500 mt-2">Receptor Configuration Updated.</p>')
         else:
             print(form.errors)
-        return render(request, 'generate_rec_submit.html', context={'rec_form':form})
+            return HttpResponse('Something went wrong')
+        # return render(request, 'generate_rec_submit.html', context={'form':form})
 
 class GenerateSmilesView(View):
     

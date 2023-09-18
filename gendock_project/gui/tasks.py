@@ -19,6 +19,8 @@ from rest.gen_process import *
 
 RDLogger.DisableLog('rdApp.*')
 
+
+
 @shared_task(bind=True)
 def generate_smiles(self, sample_number, desired_length):
     # Define the paths and configurations
