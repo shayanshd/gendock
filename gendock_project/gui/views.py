@@ -2,14 +2,29 @@
 from django.shortcuts import render, redirect
 from django.views import View
 from .models import UploadedCSV, CleanedSmile, TrainLog, ReceptorConfiguration
-from .tasks import process_csv_task, start_training, generate_smiles
+from .tasks import process_csv_task, start_training, generate_smiles, process_nd_worker
 from celery.result import AsyncResult
 from celery_progress.backend import Progress
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from celery.app import default_app
 from .forms import GenerateSmilesForm, ReceptorConfModelForm
 import json
 import ast
+from django.http import JsonResponse
+
+def start_docking(request):
+    if request.method == 'POST':
+        # Retrieve the value of hidden_generation_number from POST data
+        generation_number = request.POST.get('hidden_generation_number', '0')
+        print(generation_number)
+        # Start the Celery task using generation_number as global_generation
+        task = process_nd_worker.delay(generation_number)
+        
+        # Return a JSON response indicating the task ID
+        return JsonResponse({'task_id': task.id})
+    else:
+        # Handle other cases or return an appropriate response
+        return HttpResponseBadRequest("Invalid request method")
 
 class GenerateProgressView(View):
     def get(self, request, task_id):

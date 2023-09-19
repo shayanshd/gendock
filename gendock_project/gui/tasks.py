@@ -13,13 +13,80 @@ from rest.lstm_chem.trainer import LSTMChemTrainer
 from rest.lstm_chem.generator import LSTMChemGenerator
 from copy import copy
 import json
+import shutil
+import glob
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 import tensorflow
 from rest.gen_process import *
 
 RDLogger.DisableLog('rdApp.*')
 
+@shared_task(bind=True)
+def process_nd_worker(self, global_generation):
+    df = pd.read_csv('checklist.csv')
+    vina_address = str(df['Address'].loc[df['Product'].str.contains('Vina', case=False)].values[0])
+    mgl_address = str(df['Address'].loc[df['Product'].str.contains('MGL', case=False)].values[0])
+    MGL_ROOT_PATH = mgl_address  # enter root of mgltools installed on your device
+    PYTHONSH = os.path.join(MGL_ROOT_PATH, 'bin/pythonsh')
+    LIGAND_PREPARE = os.path.join(MGL_ROOT_PATH, r'MGLToolsPckgs/AutoDockTools/Utilities24/prepare_ligand4.py')
+    VINA_PATH = vina_address
 
+    workingdir = os.getcwd()
+    gendir = workingdir + f'/generations/gen{global_generation}'
+    workingdir = workingdir + r'/babeltest'
+
+    try:
+        shutil.rmtree(workingdir)
+    except OSError:
+        print("Deletion of the directory %s failed" % workingdir)
+
+    try:
+        os.mkdir(workingdir)
+    except OSError:
+        print("Creation of the directory %s failed" % workingdir)
+
+    CONFIG_PATH = os.getcwd() + r'/receptor_conf.txt'
+
+    # Convert smiles to PDB
+    smi_to_pdb = f'(cd {workingdir} && obabel -isdf your_smiles_input.sdf -opdb -O output.pdb -h -m)'
+    os.system(smi_to_pdb)
+
+    # Prepare ligands
+    counter = len(glob.glob1(workingdir, "*.pdb"))
+    for i in range(counter):
+        prepare_command = f'(cd "{workingdir}" && ' \
+                          f'"{PYTHONSH}" "{LIGAND_PREPARE}" -l your_pdb_path{i + 1}.pdb -o your_pdb_path{i + 1}.pdbqt)'
+        os.system(prepare_command)
+
+    # Dock ligands
+    counter = len(glob.glob1(workingdir, "*.pdbqt"))
+    print('Total number of smiles to dock: ' + str(counter))
+    for i in range(counter):
+        dock_command = fr'(cd {workingdir} && "{VINA_PATH}/vina" --ligand your_smiles_input{i + 1}.pdbqt ' \
+                      f'--config {CONFIG_PATH} --log your_smiles_input{i + 1}.log)'
+        os.system(dock_command)
+    
+    # Add to result table
+    suppl = Chem.SDMolSupplier(gendir + '.sdf')
+    print(type(suppl))
+    print(suppl)
+    df2 = pd.DataFrame(columns=['Ligand', 'Binding Affinity'])
+    counter = len(glob.glob1(workingdir, "*.log"))
+    if counter == len(suppl):
+        for i in range(len(suppl)):
+            mol = suppl[i].GetProp("Title")
+            filename = fr'{workingdir}/mysm{i + 1}.log'
+            with open(filename) as myFile:
+                for num, line in enumerate(myFile, 1):
+                    if '  1  ' in line:
+                        k = line[line.find('-'):]
+                        k = k[:k.find(' ')]
+                        break
+            df2.loc[i] = ['6lu7cov_' + mol, k]
+
+    df2.to_csv(r'all_smiles.csv', index=False)
+    df2.to_csv(r'generations/results/results_gen' + str(global_generation) + '.csv', index=False)
+    return df2
 
 @shared_task(bind=True)
 def generate_smiles(self, sample_number, desired_length):

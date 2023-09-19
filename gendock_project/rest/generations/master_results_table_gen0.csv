@@ -1,6 +1,6 @@
 id,gen,smile,source,score
-AAAA,0,COc1ccc(C(C#N)NC(=O)c2cccnc2OC)cc1OC,generated,99.9
-AAAB,0,CC(C)(C)c1ncc(C(=O)N2CC3CCCCC2CC3)cn1,generated,99.9
-AAAC,0,CCc1cc(C(=O)N(C)Cc2ccccc2)ccc1O,generated,99.9
-AAAD,0,Cc1cc(C(N)=O)sc1C(=O)NCC(=O)NC1CCCC1,generated,99.9
-AAAE,0,CCn1nc(C)cc1C(=O)N1CCC(OC)CC1C,generated,99.9
+AAAA,0,Cc1cc(-c2ccccc2)cc2cc(-c3ccc(F)c(C(F)(F)F)c3)sc12,generated,99.9
+AAAB,0,Cc1ccc(C(=O)N2CCCC2C(=O)Nc2ccccc2C)c(Cl)c1,generated,99.9
+AAAC,0,CCOC(=O)CN(c1cc(C)nc2[nH]cnc12)C(C)C,generated,99.9
+AAAD,0,Cc1ccc2nc(C(=O)NCCCc3nccs3)ccc2c1,generated,99.9
+AAAE,0,CC(CC(O)CN1CCOCC1)NC(=O)c1cc(C2CC2)ccc1F,generated,99.9

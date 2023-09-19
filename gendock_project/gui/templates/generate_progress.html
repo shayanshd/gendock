@@ -31,7 +31,27 @@
     <div class="mb-6">
         <button id="configure-receptor-btn"
             class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Configure Receptor</button>
-        <button class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 ml-4">Start Docking</button>
+            <form method="post" action="">
+                {% csrf_token %}
+            
+                <!-- Hidden Input for Generation Number -->
+                <input type="hidden" name="hidden_generation_number" id="hidden_generation_number" value="0">
+            
+                <!-- Start Docking Button -->
+                <button name="start_docking" type="submit" hx-post="{% url 'start_docking' %}"
+                        class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 ml-4">
+                    Start Docking
+                </button>
+            
+                <!-- JavaScript to Update Hidden Input -->
+                <script>
+                    // Update the hidden input with the value from the generation_number input
+                    document.getElementById('generation_number').addEventListener('input', function() {
+                        var generationNumber = this.value;
+                        document.getElementById('hidden_generation_number').value = generationNumber;
+                    });
+                </script>
+            </form>
     </div>
     <div id="configure-receptor-modal" class="fixed inset-0 z-10 hidden overflow-auto bg-black bg-opacity-50">
         <div class="relative p-8 bg-white w-96 mx-auto my-20 rounded-lg shadow-md">
@@ -45,9 +65,9 @@
             </button>
 
             <h2 class="text-xl font-semibold mb-4">Configure Receptor</h2>
-            <form hx-post="{% url 'generate_progress' task_id %}" hx-target="#validation-message" hx-encoding="multipart/form-data"
-            enctype="multipart/form-data">
-              {% csrf_token %}
+            <form hx-post="{% url 'generate_progress' task_id %}" hx-target="#validation-message"
+                hx-encoding="multipart/form-data" enctype="multipart/form-data">
+                {% csrf_token %}
 
                 <div class="mb-4">
                     {{ form.receptor_file.label_tag }}
@@ -76,7 +96,7 @@
                     {{ form.exhaustive_number.label_tag }}
                     {{ form.exhaustive_number }}
                 </div>
-                
+
                 <!-- Modal Action Buttons -->
                 <div class="flex justify-end">
                     <button name="submit_conf" id="done-configure-receptor" type="submit"
@@ -87,7 +107,7 @@
                 {{ form.non_field_errors }}
             </form>
         </div>
-        
+
     </div>
 
     <!-- JavaScript to Handle Modal Interaction -->
@@ -103,7 +123,8 @@
 
         // Close the modal when the "Done" button is clicked
         document.getElementById('done-configure-receptor').addEventListener('click', function () {
-            if (validateReceptorForm()) {
+            const receptorFile = document.getElementById('{{ form.receptor_file.id_for_label }}');
+            if (validateReceptorForm() && receptorFile.files.length > 0) {
                 document.getElementById('configure-receptor-modal').classList.add('hidden');
                 // Clear any previous validation message
                 document.getElementById('validation-message').textContent = '';
@@ -118,33 +139,32 @@
             document.getElementById('configure-receptor-modal').classList.add('hidden');
         });
         function validateReceptorForm() {
-        
-        const centerX = document.getElementById('id_center_x');
-        const sizeX = document.getElementById('id_size_x');
-        const centerY = document.getElementById('id_center_y');
-        const sizeY = document.getElementById('id_size_y');
-        const centerZ = document.getElementById('id_center_z');
-        const sizeZ = document.getElementById('id_size_z');
-        // Add similar lines for other fields (center_y, size_y, center_z, size_z, exhaustive_number)
 
-        if (
-            
-            centerX.value.trim() === '' ||
-            sizeX.value.trim() === '' ||
-            centerY.value.trim() === '' ||
-            sizeY.value.trim() === '' ||
-            centerZ.value.trim() === '' ||
-            sizeZ.value.trim() === ''
-            // Add similar conditions for other fields
-        ) {
-            // At least one required field is empty
-            return false;
+            const receptorFile = document.getElementById('{{ form.receptor_file.id_for_label }}');
+            const centerX = document.getElementById('{{ form.center_x.id_for_label }}');
+            const sizeX = document.getElementById('{{ form.size_x.id_for_label }}');
+            const centerY = document.getElementById('{{ form.center_y.id_for_label }}');
+            const sizeY = document.getElementById('{{ form.size_y.id_for_label }}');
+            const centerZ = document.getElementById('{{ form.center_z.id_for_label }}');
+            const sizeZ = document.getElementById('{{ form.size_z.id_for_label }}');
+            const exhaustiveNumber = document.getElementById('{{ form.exhaustive_number.id_for_label }}');
+
+            if (
+
+                centerX.value.trim() === '' ||
+                sizeX.value.trim() === '' ||
+                centerY.value.trim() === '' ||
+                sizeY.value.trim() === '' ||
+                centerZ.value.trim() === '' ||
+                sizeZ.value.trim() === ''
+                // Add similar conditions for other fields
+            ) {
+                // At least one required field is empty
+                return false;
+            }
+            return true;
         }
-        return true;
-    }
     </script>
     {% endif %}
-
-    <!-- You can style this section as needed -->
 </div>
 {% endif %}
