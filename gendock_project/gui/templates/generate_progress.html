@@ -31,14 +31,14 @@
     <div class="mb-6">
         <button id="configure-receptor-btn"
             class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Configure Receptor</button>
-            <form method="post" action="">
+            <form method="post" action="" hx-post="{% url 'start_docking' %}">
                 {% csrf_token %}
             
                 <!-- Hidden Input for Generation Number -->
                 <input type="hidden" name="hidden_generation_number" id="hidden_generation_number" value="0">
             
                 <!-- Start Docking Button -->
-                <button name="start_docking" type="submit" hx-post="{% url 'start_docking' %}"
+                <button name="start_docking" type="submit" id="start_docking"
                         class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 ml-4">
                     Start Docking
                 </button>
@@ -46,8 +46,9 @@
                 <!-- JavaScript to Update Hidden Input -->
                 <script>
                     // Update the hidden input with the value from the generation_number input
-                    document.getElementById('generation_number').addEventListener('input', function() {
-                        var generationNumber = this.value;
+                    document.getElementById('start_docking').addEventListener('click', function() {
+                        var generationNumber = document.getElementById('generation_number').value;
+                        console.log(generationNumber);
                         document.getElementById('hidden_generation_number').value = generationNumber;
                     });
                 </script>

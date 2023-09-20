@@ -90,7 +90,6 @@ def generate_more_smiles(self, global_generation, sample_number, desired_length)
     modeler = LSTMChem(config, session='generate')
     generator = LSTMChemGenerator(modeler)
 
-    # sample_number = 20
     base_generated = generator.sample(progress_recorder, num=sample_number)
 
     base_generated_mols = GenProcess.validate_mols(base_generated)

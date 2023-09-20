@@ -125,18 +125,11 @@ class GenProcess:
 
     def write_gen_to_sdf(mols_for_export, generation, batch_size):
         if len(mols_for_export) > batch_size:
-            batches = (len(mols_for_export) // 1000) + 1
-            for i in range(0, batches):
-                batch_to_export = mols_for_export[i * batch_size:(i + 1) * batch_size]
-                w = Chem.SDWriter('rest/generations/gen' + str(generation) + '_batch_' + str(i + 1) + '.sdf')
-                for m in batch_to_export: w.write(m)
-        else:
-            w = Chem.SDWriter('rest/generations/gen' + str(generation) + '.sdf')
-            for m in mols_for_export:
-                w.write(m)
-
-        # w = Chem.SDWriter('./generations/junk/test.sdf')
-        # w.write(m)
+            mols_for_export = mols_for_export[:batch_size]
+        
+        w = Chem.SDWriter('rest/generations/gen' + str(generation) + '.sdf')
+        for m in mols_for_export:
+            w.write(m)
 
         return mols_for_export
 

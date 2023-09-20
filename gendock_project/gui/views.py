@@ -27,13 +27,10 @@ class DockingProgressView(View):
         
         return render(request, 'docking_progress.html', context=context)
 
-
-
-
 class DockingView(View):
     def post(self, request):
         # Retrieve the value of hidden_generation_number from POST data
-        generation_number = request.POST.get('hidden_generation_number', '0')
+        generation_number = request.POST.get('hidden_generation_number')
         print(generation_number)       
         task = process_nd_worker.delay(generation_number)
         return render(request, 'docking_progress.html', context={'dock_task_id':task.id, 'dock_progress':0})
