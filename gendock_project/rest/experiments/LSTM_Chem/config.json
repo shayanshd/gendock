@@ -17,7 +17,7 @@
   "tensorboard_write_graph": true,
   "sampling_temp": 0.75,
   "smiles_max_length": 128,
-  "finetune_epochs": 12,
+  "finetune_epochs": 1,
   "finetune_batch_size": 1,
   "finetune_data_filename": "./datasets/TRPM8_inhibitors_for_fine-tune.smi",
   "config_file": "rest/experiments/LSTM_Chem/config.json",

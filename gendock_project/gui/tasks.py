@@ -90,7 +90,7 @@ def generate_more_smiles(self, global_generation, sample_number, desired_length)
     modeler = LSTMChem(config, session='generate')
     generator = LSTMChemGenerator(modeler)
 
-    sample_number = 20
+    # sample_number = 20
     base_generated = generator.sample(progress_recorder, num=sample_number)
 
     base_generated_mols = GenProcess.validate_mols(base_generated)
@@ -187,7 +187,7 @@ def generate_more_smiles(self, global_generation, sample_number, desired_length)
     )
 
     new_mols_to_test = GenProcess.append_to_tracking_table(
-        master_table, mols_for_next_generation, 'generated', global_generation
+        master_table, mols_for_next_generation, 'generated', global_generation, config.data_filename
     )
     mols_for_pd = new_mols_to_test[0]
     mols_for_export = new_mols_to_test[1]
@@ -205,12 +205,14 @@ def generate_more_smiles(self, global_generation, sample_number, desired_length)
 @shared_task(bind=True)
 def process_nd_worker(self, global_generation):
     df = pd.read_csv('rest/checklist.csv')
-    vina_address = str(df['Address'].loc[df['Product'].str.contains('Vina', case=False)].values[0])
-    mgl_address = str(df['Address'].loc[df['Product'].str.contains('MGL', case=False)].values[0])
+    vina_address = os.getcwd() + '/' + str(df['Address'].loc[df['Product'].str.contains('Vina', case=False)].values[0])
+    mgl_address = os.getcwd() + '/' +str(df['Address'].loc[df['Product'].str.contains('MGL', case=False)].values[0])
     MGL_ROOT_PATH = mgl_address  # enter root of mgltools installed on your device
     PYTHONSH = os.path.join(MGL_ROOT_PATH, 'bin/pythonsh')
     LIGAND_PREPARE = os.path.join(MGL_ROOT_PATH, r'MGLToolsPckgs/AutoDockTools/Utilities24/prepare_ligand4.py')
     VINA_PATH = vina_address
+
+    print(os.path.exists(vina_address), os.path.exists(mgl_address))
 
     # Create a ProgressRecorder instance
     progress_recorder = ProgressRecorder(self)
@@ -241,6 +243,8 @@ def process_nd_worker(self, global_generation):
     counter = len(glob.glob1(workingdir, "*.pdb"))
     progress_recorder.set_progress(0, counter)
     for i in range(counter):
+        print(f'(cd "{workingdir}" && ' \
+                          f'"{PYTHONSH}" "{LIGAND_PREPARE}" -l mysm{i + 1}.pdb -o mysm{i + 1}.pdbqt)')
         prepare_command = f'(cd "{workingdir}" && ' \
                           f'"{PYTHONSH}" "{LIGAND_PREPARE}" -l mysm{i + 1}.pdb -o mysm{i + 1}.pdbqt)'
         os.system(prepare_command)

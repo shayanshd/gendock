@@ -2,7 +2,7 @@
 from django.shortcuts import render, redirect
 from django.views import View
 from .models import UploadedCSV, CleanedSmile, TrainLog, ReceptorConfiguration
-from .tasks import process_csv_task, start_training, generate_smiles, process_nd_worker
+from .tasks import process_csv_task, start_training, generate_smiles, process_nd_worker, generate_more_smiles
 from celery.result import AsyncResult
 from celery_progress.backend import Progress
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
@@ -99,14 +99,17 @@ class GenerateSmilesView(View):
     
     def post(self, request):
         form = GenerateSmilesForm(request.POST)
-        print(request.POST)
+        generation_number = int(request.POST.get('generation_number'))
         if form.is_valid():
             sample_number = form.cleaned_data['sample_number']
             desired_length = form.cleaned_data['desired_length']
             active_tasks = default_app.control.inspect().active()
             if not any(active_tasks.values()):
             # Enqueue the Celery task with the provided arguments
-                task = generate_smiles.delay(sample_number, desired_length)
+                if generation_number == 0:
+                    task = generate_smiles.delay(sample_number, desired_length)
+                else:
+                    task = generate_more_smiles.delay(generation_number ,sample_number, desired_length)
                 return render(request, 'generate_progress.html', context={'task_id':task.task_id,'progress':0, 'current':0, 'total':0})  # Redirect to a success page
             return HttpResponse('Another task is already in progress.')
         print(form.errors.as_json())
