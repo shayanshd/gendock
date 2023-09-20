@@ -1,8 +1,8 @@
-receptor = /home/nextera/nextera/shayan/gendock/gendock_project/receptor_files/6lu7.pdbqt
-center_x = 0.00
-size_x = 0.00
-center_y = 0.00
-size_y = 0.00
-center_z = 0.00
-size_z = 0.00
-exhaustiveness = 8
+receptor = /home/shayan/Documents/gendock/gendock_project/receptor_files/6lu7.pdbqt
+center_x = -11.493
+center_y = 10.857
+center_z = 62.522
+size_x = 30
+size_y = 30
+size_z = 30
+exhaustiveness = 16

@@ -1,5 +1,5 @@
-from lstm_chem.utils.smiles_tokenizer2 import SmilesTokenizer
-from lstm_chem.generator import LSTMChemGenerator
+from rest.lstm_chem.utils.smiles_tokenizer2 import SmilesTokenizer
+from rest.lstm_chem.generator import LSTMChemGenerator
 
 
 class LSTMChemFinetuner(LSTMChemGenerator):

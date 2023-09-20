@@ -5,32 +5,48 @@ from .models import UploadedCSV, CleanedSmile, TrainLog, ReceptorConfiguration
 from .tasks import process_csv_task, start_training, generate_smiles, process_nd_worker
 from celery.result import AsyncResult
 from celery_progress.backend import Progress
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from celery.app import default_app
 from .forms import GenerateSmilesForm, ReceptorConfModelForm
 import json
 import ast
-from django.http import JsonResponse
 
-def start_docking(request):
-    if request.method == 'POST':
+class DockingProgressView(View):
+    def get(self, request, dock_task_id):
+
+        result = AsyncResult(dock_task_id)
+        progress = Progress(result) 
+        percent_complete = int(progress.get_info()['progress']['percent'])
+        
+        current_smile = int(progress.get_info()['progress']['current'])
+        total_smile = int(progress.get_info()['progress']['total'])
+        print(percent_complete, current_smile, total_smile)
+        context={'dock_task_id':dock_task_id, 'dock_progress':percent_complete, 'dock_current':current_smile, 'dock_total':total_smile}
+        if result.successful():  
+            context = {'dock_task_id': dock_task_id, 'dock_progress':percent_complete}
+        
+        return render(request, 'docking_progress.html', context=context)
+
+
+
+
+class DockingView(View):
+    def post(self, request):
         # Retrieve the value of hidden_generation_number from POST data
         generation_number = request.POST.get('hidden_generation_number', '0')
-        print(generation_number)
-        # Start the Celery task using generation_number as global_generation
+        print(generation_number)       
         task = process_nd_worker.delay(generation_number)
-        
-        # Return a JSON response indicating the task ID
-        return JsonResponse({'task_id': task.id})
-    else:
-        # Handle other cases or return an appropriate response
+        return render(request, 'docking_progress.html', context={'dock_task_id':task.id, 'dock_progress':0})
+    
+    def get(self, request):
+        # Handle GET requests if needed
         return HttpResponseBadRequest("Invalid request method")
 
 class GenerateProgressView(View):
     def get(self, request, task_id):
         
         result = AsyncResult(task_id)
-        progress = Progress(AsyncResult(task_id)) 
+        progress = Progress(result) 
         percent_complete = int(progress.get_info()['progress']['percent'])
         current_gen = int(progress.get_info()['progress']['current'])
         total_gen = int(progress.get_info()['progress']['total'])
@@ -83,6 +99,7 @@ class GenerateSmilesView(View):
     
     def post(self, request):
         form = GenerateSmilesForm(request.POST)
+        print(request.POST)
         if form.is_valid():
             sample_number = form.cleaned_data['sample_number']
             desired_length = form.cleaned_data['desired_length']
@@ -90,10 +107,11 @@ class GenerateSmilesView(View):
             if not any(active_tasks.values()):
             # Enqueue the Celery task with the provided arguments
                 task = generate_smiles.delay(sample_number, desired_length)
-                return render(request, 'generate_smiles.html', context={'task_id':task.task_id, 'form':form})  # Redirect to a success page
+                return render(request, 'generate_progress.html', context={'task_id':task.task_id,'progress':0, 'current':0, 'total':0})  # Redirect to a success page
             return HttpResponse('Another task is already in progress.')
-        print(form.errors)
-        return render(request, 'generate_smiles.html', context={'form':form})
+        print(form.errors.as_json())
+        return HttpResponse(f'<div class="text-red-600 mt-4">{list(form.errors.values())[0]}</div>')
+        # return render(request, context={'form':form})
 
 class TrainProgressView(View):
 

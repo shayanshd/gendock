@@ -1,7 +1,3 @@
-Cc1ccc2nc(C(=O)NCCCc3nccs3)ccc2c1
-CCOC(=O)CN(c1cc(C)nc2[nH]cnc12)C(C)C
-Cc1cc(-c2ccccc2)cc2cc(-c3ccc(F)c(C(F)(F)F)c3)sc12
-COC(=O)c1sc(NC(=O)CSc2ccccc2)nc1C
-CC(CC(O)CN1CCOCC1)NC(=O)c1cc(C2CC2)ccc1F
-Cc1ccc(C(=O)N2CCCC2C(=O)Nc2ccccc2C)c(Cl)c1
-Cc1ccc(C(=O)NC2CCC(c3nncn3C)CC2)c(C)c1
+CCC(O)CC(C)C(=O)Nc1ccc(C(C)=O)cc1
+CC(C)C(=O)CN1CCN(C(=O)c2ccc(CN3CCOCC3)cc2)CC1
+COc1cc(OC)c(C(=O)NCC2CCOC2)cc1C(N)=O

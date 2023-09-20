@@ -1,0 +1,16 @@
+{% if dock_progress != 100 %}
+<div class="container mx-auto" hx-get="{% url 'docking_progress' dock_task_id %}" hx-target="#gen-progress"
+    hx-trigger="load delay:300ms">
+    <h1 class="text-3xl font-semibold mb-6">Docking Progress</h1>
+
+    <div class="w-full bg-gray-300">
+        <div class="relative w-full bg-green-500 text-center py-2 text-white" style="width: {{ dock_progress }}%;">
+            <span class="text-xs font-semibold">{{ dock_progress }}%</span>
+        </div>
+    </div>
+
+    <div class="mt-4 text-center">
+        <p class="text-lg font-semibold">{{ dock_current }} / {{ dock_total }}</p>
+    </div>
+</div>
+{% endif %}

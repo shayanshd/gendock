@@ -63,11 +63,11 @@ class TrainLog(models.Model):
 class ReceptorConfiguration(models.Model):
     receptor_file = models.FileField(upload_to='receptor_files/')
     center_x = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    size_x = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    size_x = models.DecimalField(max_digits=10, decimal_places=2, default=30)
     center_y = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    size_y = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    size_y = models.DecimalField(max_digits=10, decimal_places=2, default=30)
     center_z = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    size_z = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    size_z = models.DecimalField(max_digits=10, decimal_places=2, default=30)
     exhaustive_number = models.IntegerField(default=8)
 
     def __str__(self):

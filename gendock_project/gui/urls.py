@@ -1,6 +1,6 @@
 # csv_processor/urls.py
 from django.urls import path
-from .views import UploadCSVView, ProcessCSVView, GetProgress, TrainView, TrainProgressView, GenerateSmilesView, GenerateProgressView, start_docking
+from .views import *
 
 urlpatterns = [
     path('upload/', UploadCSVView.as_view(), name='upload'),
@@ -10,5 +10,6 @@ urlpatterns = [
     path('train-progress/<task_id>', TrainProgressView.as_view(), name='train_progress'),
     path('generate/', GenerateSmilesView.as_view(), name='generate'),
     path('generate/progress/<task_id>', GenerateProgressView.as_view(), name='generate_progress'),
-    path('start_docking/', start_docking, name='start_docking'),
+    path('start-docking/', DockingView.as_view(), name='start_docking'),
+    path('docking-progress/<str:dock_task_id>/', DockingProgressView.as_view(), name='docking_progress'),
 ]

@@ -11,6 +11,8 @@ from rest.lstm_chem.data_loader import DataLoader
 from rest.lstm_chem.model import LSTMChem
 from rest.lstm_chem.trainer import LSTMChemTrainer
 from rest.lstm_chem.generator import LSTMChemGenerator
+from rest.lstm_chem.finetuner import LSTMChemFinetuner
+
 from copy import copy
 import json
 import shutil
@@ -22,8 +24,187 @@ from rest.gen_process import *
 RDLogger.DisableLog('rdApp.*')
 
 @shared_task(bind=True)
+def generate_more_smiles(self, global_generation, sample_number, desired_length):
+
+    progress_recorder = ProgressRecorder(self)
+
+    print('Starting process for generation ' + str(global_generation))
+    master_table = pd.read_csv(
+        './rest/generations/master_results_table_gen' + str(global_generation - 1) + '.csv',
+        sep=','
+    )
+
+    new_scores = pd.read_csv('./rest/generations/results/results_gen' + str(global_generation - 1) + '.csv', sep=',')
+    new_scores = new_scores.groupby("Ligand").min()["Binding Affinity"].reset_index()
+    new_scores['id'] = new_scores['Ligand'].str.split("_").str[1].str.split("gen").str[0].str.split("id").str[1]
+    new_scores['gen'] = new_scores['Ligand'].str.split("_").str[1].str.split("gen").str[1]
+    new_scores['score'] = new_scores["Binding Affinity"]
+    new_scores = new_scores[['id', 'gen', 'score']]
+    new_scores.id = new_scores.id.astype(str)
+    new_scores.gen = new_scores.gen.astype(int)
+    master_table.id = master_table.id.astype(str)
+    master_table.gen = master_table.gen.astype(int)
+    new_table = pd.merge(master_table, new_scores, on=['id', 'gen'], suffixes=('_old', '_new'), how='left')
+    new_table['score'] = np.where(new_table['score_new'].isnull(), new_table['score_old'], new_table['score_new'])
+    new_table = new_table.drop(['score_old', 'score_new'], axis=1)
+    new_table['weight'] = new_table['smile'].apply(lambda x: Chem.Descriptors.MolWt(Chem.MolFromSmiles(x)))
+    new_table = new_table.sort_values('score', ascending=True)
+
+    new_table.to_csv('./rest/generations/master_results_table_gen' + str(global_generation - 1) + '.csv', index=False)
+
+    # Select top X ranked by score for training data to refine the molecule generator RNN
+    training_smiles = list(set(list(new_table.head(36)['smile'])))
+    len(training_smiles)
+
+    training_fingerprints = []
+    for smile in training_smiles:
+        training_fingerprints.append(Chem.RDKFingerprint(Chem.MolFromSmiles(smile)))
+
+    def calc_similarity_score(row):
+        fingerprint = Chem.RDKFingerprint(Chem.MolFromSmiles(row['smile']))
+        similarity = np.max(DataStructs.BulkTanimotoSimilarity(fingerprint, training_fingerprints))
+        adj_factor = (1 / similarity) ** .333
+        adj_score = row['score'] * adj_factor
+        return adj_score
+
+    similarity_adjusted = new_table.copy(deep=True)
+    similarity_adjusted = similarity_adjusted[similarity_adjusted['weight'] < 500]
+    similarity_adjusted['similarity_adj_score'] = similarity_adjusted.apply(calc_similarity_score, axis=1)
+    similarity_adjusted = similarity_adjusted.sort_values('similarity_adj_score', ascending=True)
+
+    # Select top X ranked by similarity adjusted score for training data to refine the molecule generator RNN (ensures diversity)
+    training_smiles += list(similarity_adjusted.head(5)['smile'])
+    len(training_smiles)
+
+    weight_adjusted = new_table.copy(deep=True)
+    weight_adjusted['weight_adj_score'] = weight_adjusted.apply(GenProcess.calc_weight_score, axis=1)
+    weight_adjusted = weight_adjusted.sort_values('weight_adj_score', ascending=True)
+
+    # Select top X ranked by similarity adjusted score for training data to refine the molecule generator RNN (ensures diversity)
+    training_smiles += list(weight_adjusted.head(5)['smile'])
+    len(training_smiles)
+
+    # Generate some with the base original model
+    CONFIG_FILE = 'rest/experiments/LSTM_Chem/config.json'
+    config = process_config(CONFIG_FILE)
+    modeler = LSTMChem(config, session='generate')
+    generator = LSTMChemGenerator(modeler)
+
+    sample_number = 20
+    base_generated = generator.sample(progress_recorder, num=sample_number)
+
+    base_generated_mols = GenProcess.validate_mols(base_generated)
+    base_generated_smiles = GenProcess.convert_mols_to_smiles(base_generated_mols)
+    random.shuffle(base_generated_smiles)
+    random.shuffle(base_generated_smiles)
+
+    # Select X for training data to refine the molecule generator RNN (ensures diversity)
+    training_smiles += base_generated_smiles[0:5]
+    len(training_smiles)
+
+    master_table = pd.read_csv(
+        './rest/generations/master_results_table_gen' + str(global_generation - 1) + '.csv',
+        sep=','
+    )
+
+    # Save the list of smiles to train on
+    with open('./rest/generations/training/gen' + str(global_generation) + '_training.smi', 'w') as f:
+        for item in training_smiles:
+            f.write("%s\n" % item)
+
+    # Retrain the network to create molecules more like those selected above
+
+    config = process_config('rest/experiments/LSTM_Chem/config.json')
+    if global_generation == 1:
+        config['model_weight_filename'] = 'rest/experiments/LSTM_Chem/checkpoints/' + 'LSTM_Chem-baseline-model-full.hdf5'
+    else:
+        config['model_weight_filename'] = 'rest/experiments/LSTM_Chem/checkpoints/finetuned_gen' + str(
+            global_generation - 1) + '.hdf5'
+
+    config['finetune_data_filename'] = './rest/generations/training/gen' + str(global_generation) + '_training.smi'
+
+    modeler = LSTMChem(config, session='finetune')
+    finetune_dl = DataLoader(config, data_type='finetune')
+
+    finetuner = LSTMChemFinetuner(modeler, finetune_dl)
+    finetuner.finetune()
+
+    finetuner.model.save_weights(
+        'rest/experiments/LSTM_Chem/checkpoints/finetuned_gen' + str(global_generation) + '.hdf5'
+    )
+
+    config['model_weight_filename'] = 'rest/experiments/LSTM_Chem/checkpoints/finetuned_gen' + str(
+        global_generation) + '.hdf5'
+
+    modeler = LSTMChem(config, session='generate')
+    generator = LSTMChemGenerator(modeler)
+
+    sample_number = sample_number
+    sampled_smiles = generator.sample(progress_recorder, num=sample_number)
+
+    valid_mols = []
+    for smi in sampled_smiles:
+        mol = Chem.MolFromSmiles(smi)
+        if mol is not None:
+            valid_mols.append(mol)
+
+    if len(valid_mols)  == 0:
+        return [0,0,0]
+
+    validity = len(valid_mols) / sample_number
+
+    valid_smiles = [Chem.MolToSmiles(mol) for mol in valid_mols]
+    uniqueness = len(set(valid_smiles)) / len(valid_smiles)
+
+    # Of valid smiles generated, how many are truly original vs occurring in the training data
+
+    training_data = pd.read_csv('./rest/datasets/all_smiles_clean.smi', header=None)
+    training_set = set(list(training_data[0]))
+    original = []
+    for smile in list(set(valid_smiles)):
+        if smile not in training_set:
+            original.append(smile)
+    
+    originality = len(set(original)) / len(set(valid_smiles))
+
+    valid_smiles = list(set(valid_smiles))
+    gen0_all = valid_smiles
+    gen0 = []
+    for smi in gen0_all:
+        w = Chem.Descriptors.MolWt(Chem.MolFromSmiles(smi))
+        if w < 500:
+            gen0.append(smi)
+    len(gen0)
+    valid_smiles = gen0
+    len(valid_smiles)
+
+    # take the valid smiles from above and run them through process to add to tracking table
+    mols_for_next_generation = GenProcess.validate_mols(valid_smiles)
+
+    master_table = pd.read_csv(
+        './rest/generations/master_results_table_gen' + str(global_generation - 1) + '.csv',
+        sep=','
+    )
+
+    new_mols_to_test = GenProcess.append_to_tracking_table(
+        master_table, mols_for_next_generation, 'generated', global_generation
+    )
+    mols_for_pd = new_mols_to_test[0]
+    mols_for_export = new_mols_to_test[1]
+
+    master_table = master_table._append(mols_for_pd)
+    master_table = master_table.reset_index(drop=True)
+    master_table.to_csv('./rest/generations/master_results_table_gen' + str(global_generation) + '.csv', index=False)
+
+    GenProcess.write_gen_to_sdf(mols_for_export, global_generation, desired_length)
+    print('Writing generated smiles to ' + str(global_generation))
+    print('Done!')
+
+    return [validity, uniqueness, originality]
+
+@shared_task(bind=True)
 def process_nd_worker(self, global_generation):
-    df = pd.read_csv('checklist.csv')
+    df = pd.read_csv('rest/checklist.csv')
     vina_address = str(df['Address'].loc[df['Product'].str.contains('Vina', case=False)].values[0])
     mgl_address = str(df['Address'].loc[df['Product'].str.contains('MGL', case=False)].values[0])
     MGL_ROOT_PATH = mgl_address  # enter root of mgltools installed on your device
@@ -31,7 +212,11 @@ def process_nd_worker(self, global_generation):
     LIGAND_PREPARE = os.path.join(MGL_ROOT_PATH, r'MGLToolsPckgs/AutoDockTools/Utilities24/prepare_ligand4.py')
     VINA_PATH = vina_address
 
-    workingdir = os.getcwd()
+    # Create a ProgressRecorder instance
+    progress_recorder = ProgressRecorder(self)
+
+    workingdir = os.getcwd() + '/rest'
+
     gendir = workingdir + f'/generations/gen{global_generation}'
     workingdir = workingdir + r'/babeltest'
 
@@ -45,26 +230,32 @@ def process_nd_worker(self, global_generation):
     except OSError:
         print("Creation of the directory %s failed" % workingdir)
 
-    CONFIG_PATH = os.getcwd() + r'/receptor_conf.txt'
+    CONFIG_PATH = os.getcwd() + '/rest/receptor_conf.txt'
+    print(CONFIG_PATH)
 
     # Convert smiles to PDB
-    smi_to_pdb = f'(cd {workingdir} && obabel -isdf your_smiles_input.sdf -opdb -O output.pdb -h -m)'
+    smi_to_pdb = f'(cd {workingdir} && obabel -isdf {gendir}.sdf -opdb -O mysm.pdb -h -m)'
     os.system(smi_to_pdb)
 
     # Prepare ligands
     counter = len(glob.glob1(workingdir, "*.pdb"))
+    progress_recorder.set_progress(0, counter)
     for i in range(counter):
         prepare_command = f'(cd "{workingdir}" && ' \
-                          f'"{PYTHONSH}" "{LIGAND_PREPARE}" -l your_pdb_path{i + 1}.pdb -o your_pdb_path{i + 1}.pdbqt)'
+                          f'"{PYTHONSH}" "{LIGAND_PREPARE}" -l mysm{i + 1}.pdb -o mysm{i + 1}.pdbqt)'
         os.system(prepare_command)
 
     # Dock ligands
     counter = len(glob.glob1(workingdir, "*.pdbqt"))
     print('Total number of smiles to dock: ' + str(counter))
     for i in range(counter):
-        dock_command = fr'(cd {workingdir} && "{VINA_PATH}/vina" --ligand your_smiles_input{i + 1}.pdbqt ' \
-                      f'--config {CONFIG_PATH} --log your_smiles_input{i + 1}.log)'
+        dock_command = fr'(cd {workingdir} && "{VINA_PATH}/vina" --ligand mysm{i + 1}.pdbqt ' \
+                    f'--config {CONFIG_PATH} --log mysm{i + 1}.log)'
         os.system(dock_command)
+        
+    # Calculate progress as a percentage and update it
+        progress_recorder.set_progress(i+1, counter)
+
     
     # Add to result table
     suppl = Chem.SDMolSupplier(gendir + '.sdf')
@@ -84,9 +275,9 @@ def process_nd_worker(self, global_generation):
                         break
             df2.loc[i] = ['6lu7cov_' + mol, k]
 
-    df2.to_csv(r'all_smiles.csv', index=False)
-    df2.to_csv(r'generations/results/results_gen' + str(global_generation) + '.csv', index=False)
-    return df2
+    df2.to_csv('rest/all_smiles.csv', index=False)
+    df2.to_csv('rest/generations/results/results_gen' + str(global_generation) + '.csv', index=False)
+    return 'Done'
 
 @shared_task(bind=True)
 def generate_smiles(self, sample_number, desired_length):
