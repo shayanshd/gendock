@@ -11,5 +11,6 @@ urlpatterns = [
     path('generate/', GenerateSmilesView.as_view(), name='generate'),
     path('generate/progress/<task_id>', GenerateProgressView.as_view(), name='generate_progress'),
     path('start-docking/', DockingView.as_view(), name='start_docking'),
-    path('docking-progress/<str:dock_task_id>/', DockingProgressView.as_view(), name='docking_progress'),
+    path('docking-progress/<str:dock_task_id>/<int:generation_number>', DockingProgressView.as_view(), name='docking_progress'),
+    path('docking-master-table/<int:generation_number>', DockingMasterTableView.as_view(), name='docking_master_table'),
 ]

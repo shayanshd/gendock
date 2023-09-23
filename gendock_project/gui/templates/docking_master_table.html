@@ -1,0 +1,32 @@
+<div class="container mx-auto py-8">
+    <h1 class="text-3xl font-semibold mb-6">All Generations Details</h1>
+
+    <div class="bg-white shadow-md rounded my-6">
+        <div class="max-h-96 overflow-y-auto">
+            <table class="min-w-max w-full table-auto">
+                <thead>
+                    <tr class="bg-gray-200 text-gray-600 text-left">
+                        <th class="py-2 px-3">ID</th>
+                        <th class="py-2 px-3">Generation</th>
+                        <th class="py-2 px-3">SMILE</th>
+                        <th class="py-2 px-3">Source</th>
+                        <th class="py-2 px-3">Weight</th>
+                        <th class="py-2 px-3">Score</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-600 text-sm font-light">
+                    {% for row in csv_data %}
+                    <tr class="border-b border-gray-200 hover:bg-gray-100">
+                        <td class="py-2 px-3">{{ row.id }}</td>
+                        <td class="py-2 px-3">{{ row.gen }}</td>
+                        <td class="py-2 px-3">{{ row.smile }}</td>
+                        <td class="py-2 px-3">{{ row.source }}</td>
+                        <td class="py-2 px-3">{{ row.weight }}</td>
+                        <td class="py-2 px-3">{{ row.score }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

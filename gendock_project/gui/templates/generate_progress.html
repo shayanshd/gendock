@@ -1,6 +1,6 @@
 {% if validity is None %}
 <div class="container mx-auto" hx-get="{% url 'generate_progress' task_id %}" hx-target="#gen-progress"
-    hx-trigger="load delay:300ms">
+    hx-trigger="load delay:1s">
     <h1 class="text-3xl font-semibold mb-6">Generate Progress</h1>
 
     <div class="w-full bg-gray-300">
@@ -31,7 +31,7 @@
     <div class="mb-6 flex">
         <button id="configure-receptor-btn"
             class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Configure Receptor</button>
-        <form method="post" action="" hx-post="{% url 'start_docking' %}">
+        <form method="post" action="" hx-post="{% url 'start_docking' %}" hx-target="#gen-progress">
             {% csrf_token %}
 
             <!-- Hidden Input for Generation Number -->
@@ -50,6 +50,7 @@
                     var generationNumber = document.getElementById('generation_number').value;
                     console.log(generationNumber);
                     document.getElementById('hidden_generation_number').value = generationNumber;
+                    document.getElementById('generation_number').value++;
                 });
             </script>
         </form>

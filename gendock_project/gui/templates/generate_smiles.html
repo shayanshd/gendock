@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container mx-auto py-8">
     <div class="grid md:grid-cols-4 divide-x">
-        <div class="pr-20 mb-4">
+        <div id="generation-div" class="pr-20 mb-4">
             <form hx-post="{% url 'generate' %}" hx-target="#gen-progress">
                 {% csrf_token %}
                 <div class="flex mb-2 items-center justify-between">
@@ -18,8 +18,13 @@
                         <span class="text-xs font-semibold inline-block text-teal-600">
                             <label for="generation_number" class="block text-gray-700 font-bold mb-2">Generation
                                 Number</label>
-                            <input type="number" name="generation_number" id="generation_number"
-                                class="border w-12 p-2 rounded-md" min="0" value="0">
+                                {% if generation_number %}
+                                <input type="number" name="generation_number" id="generation_number"
+                                    class="border w-12 p-2 rounded-md" min="0" value="{{generation_number}}">
+                                {% else %}
+                                <input type="number" name="generation_number" id="generation_number"
+                                    class="border w-12 p-2 rounded-md" min="0" value="0">
+                                {% endif %}
                         </span>
                     </div>
                 </div>
@@ -48,23 +53,15 @@
 
 
         </div>
-        <div class="px-10 col-span-3">
-            {% if task_id %}
-
-            <div class="relative pt-1" hx-get="{% url 'generate_progress' task_id %}" hx-target="#gen-progress"
-                hx-trigger="load delay:300ms">
-                <div id="gen-progress">
-                </div>
-            </div>
-
-            {% else %}
+        <div id="progress-div" class="px-10 col-span-3">
 
             <div class="px-10">
                 <div id="gen-progress"></div>
 
             </div>
-            {% endif %}
         </div>
     </div>
+    <div id="master-table"></div>
 </div>
+
 {% endblock %}

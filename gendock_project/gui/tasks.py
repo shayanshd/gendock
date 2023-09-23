@@ -5,14 +5,13 @@ from rdkit import Chem, RDLogger
 from rdkit.Chem import MolStandardize, Descriptors, PropertyMol
 from celery import shared_task
 from celery_progress.backend import ProgressRecorder
-from .models import UploadedCSV, CleanedSmile, TrainLog
+from .models import UploadedCSV, CleanedSmile, TrainLog, ReceptorConfiguration
 from rest.lstm_chem.utils.config import process_config
 from rest.lstm_chem.data_loader import DataLoader
 from rest.lstm_chem.model import LSTMChem
 from rest.lstm_chem.trainer import LSTMChemTrainer
 from rest.lstm_chem.generator import LSTMChemGenerator
 from rest.lstm_chem.finetuner import LSTMChemFinetuner
-
 from copy import copy
 import json
 import shutil
@@ -29,28 +28,7 @@ def generate_more_smiles(self, global_generation, sample_number, desired_length)
     progress_recorder = ProgressRecorder(self)
 
     print('Starting process for generation ' + str(global_generation))
-    master_table = pd.read_csv(
-        './rest/generations/master_results_table_gen' + str(global_generation - 1) + '.csv',
-        sep=','
-    )
-
-    new_scores = pd.read_csv('./rest/generations/results/results_gen' + str(global_generation - 1) + '.csv', sep=',')
-    new_scores = new_scores.groupby("Ligand").min()["Binding Affinity"].reset_index()
-    new_scores['id'] = new_scores['Ligand'].str.split("_").str[1].str.split("gen").str[0].str.split("id").str[1]
-    new_scores['gen'] = new_scores['Ligand'].str.split("_").str[1].str.split("gen").str[1]
-    new_scores['score'] = new_scores["Binding Affinity"]
-    new_scores = new_scores[['id', 'gen', 'score']]
-    new_scores.id = new_scores.id.astype(str)
-    new_scores.gen = new_scores.gen.astype(int)
-    master_table.id = master_table.id.astype(str)
-    master_table.gen = master_table.gen.astype(int)
-    new_table = pd.merge(master_table, new_scores, on=['id', 'gen'], suffixes=('_old', '_new'), how='left')
-    new_table['score'] = np.where(new_table['score_new'].isnull(), new_table['score_old'], new_table['score_new'])
-    new_table = new_table.drop(['score_old', 'score_new'], axis=1)
-    new_table['weight'] = new_table['smile'].apply(lambda x: Chem.Descriptors.MolWt(Chem.MolFromSmiles(x)))
-    new_table = new_table.sort_values('score', ascending=True)
-
-    new_table.to_csv('./rest/generations/master_results_table_gen' + str(global_generation - 1) + '.csv', index=False)
+    new_table = pd.read_csv('./rest/generations/master_results_table_gen' + str(global_generation - 1) + '.csv', sep=',')
 
     # Select top X ranked by score for training data to refine the molecule generator RNN
     training_smiles = list(set(list(new_table.head(36)['smile'])))
@@ -80,7 +58,7 @@ def generate_more_smiles(self, global_generation, sample_number, desired_length)
     weight_adjusted['weight_adj_score'] = weight_adjusted.apply(GenProcess.calc_weight_score, axis=1)
     weight_adjusted = weight_adjusted.sort_values('weight_adj_score', ascending=True)
 
-    # Select top X ranked by similarity adjusted score for training data to refine the molecule generator RNN (ensures diversity)
+    # Select top X ranked by weight for training data to refine the molecule generator RNN (ensures diversity)
     training_smiles += list(weight_adjusted.head(5)['smile'])
     len(training_smiles)
 
@@ -90,7 +68,7 @@ def generate_more_smiles(self, global_generation, sample_number, desired_length)
     modeler = LSTMChem(config, session='generate')
     generator = LSTMChemGenerator(modeler)
 
-    base_generated = generator.sample(progress_recorder, num=sample_number)
+    base_generated = generator.sample(progress_recorder, num=20)
 
     base_generated_mols = GenProcess.validate_mols(base_generated)
     base_generated_smiles = GenProcess.convert_mols_to_smiles(base_generated_mols)
@@ -157,7 +135,7 @@ def generate_more_smiles(self, global_generation, sample_number, desired_length)
 
     # Of valid smiles generated, how many are truly original vs occurring in the training data
 
-    training_data = pd.read_csv('./rest/datasets/all_smiles_clean.smi', header=None)
+    training_data = pd.read_csv(config.data_filename, header=None)
     training_set = set(list(training_data[0]))
     original = []
     for smile in list(set(valid_smiles)):
@@ -179,7 +157,7 @@ def generate_more_smiles(self, global_generation, sample_number, desired_length)
 
     # take the valid smiles from above and run them through process to add to tracking table
     mols_for_next_generation = GenProcess.validate_mols(valid_smiles)
-
+    mols_for_next_generation = GenProcess.initialize_generation_from_mols(mols_for_next_generation, desired_length)
     master_table = pd.read_csv(
         './rest/generations/master_results_table_gen' + str(global_generation - 1) + '.csv',
         sep=','
@@ -261,10 +239,10 @@ def process_nd_worker(self, global_generation):
 
     
     # Add to result table
+    receptor = ReceptorConfiguration.objects.last()
+    receptor_name = os.path.splitext(os.path.basename(receptor.receptor_file.path))[0]
     suppl = Chem.SDMolSupplier(gendir + '.sdf')
-    print(type(suppl))
-    print(suppl)
-    df2 = pd.DataFrame(columns=['Ligand', 'Binding Affinity'])
+    df2 = pd.DataFrame(columns=['Ligand', 'Binding_Affinity'])
     counter = len(glob.glob1(workingdir, "*.log"))
     if counter == len(suppl):
         for i in range(len(suppl)):
@@ -276,10 +254,36 @@ def process_nd_worker(self, global_generation):
                         k = line[line.find('-'):]
                         k = k[:k.find(' ')]
                         break
-            df2.loc[i] = ['6lu7cov_' + mol, k]
+            df2.loc[i] = [receptor_name + '_' + mol, k]
 
     df2.to_csv('rest/all_smiles.csv', index=False)
     df2.to_csv('rest/generations/results/results_gen' + str(global_generation) + '.csv', index=False)
+
+    # Update the MasterTable
+
+    master_table = pd.read_csv(
+    './rest/generations/master_results_table_gen' + str(global_generation) + '.csv',
+    sep=','
+    )
+
+    new_scores = pd.read_csv('./rest/generations/results/results_gen' + str(global_generation) + '.csv', sep=',')
+    new_scores = new_scores.groupby("Ligand").min()["Binding_Affinity"].reset_index()
+    new_scores['id'] = new_scores['Ligand'].str.split("_").str[1].str.split("gen").str[0].str.split("id").str[1]
+    new_scores['gen'] = new_scores['Ligand'].str.split("_").str[1].str.split("gen").str[1]
+    new_scores['score'] = new_scores["Binding_Affinity"]
+    new_scores = new_scores[['id', 'gen', 'score']]
+    new_scores.id = new_scores.id.astype(str)
+    new_scores.gen = new_scores.gen.astype(int)
+    master_table.id = master_table.id.astype(str)
+    master_table.gen = master_table.gen.astype(int)
+    new_table = pd.merge(master_table, new_scores, on=['id', 'gen'], suffixes=('_old', '_new'), how='left')
+    new_table['score'] = np.where(new_table['score_new'].isnull(), new_table['score_old'], new_table['score_new'])
+    new_table = new_table.drop(['score_old', 'score_new'], axis=1)
+    new_table['weight'] = new_table['smile'].apply(lambda x: Chem.Descriptors.MolWt(Chem.MolFromSmiles(x)))
+    new_table = new_table.sort_values('score', ascending=True)
+
+    new_table.to_csv('./rest/generations/master_results_table_gen' + str(global_generation) + '.csv', index=False)
+
     return 'Done'
 
 @shared_task(bind=True)
@@ -314,7 +318,8 @@ def generate_smiles(self, sample_number, desired_length):
     uniqueness = len(set(valid_smiles)) / len(valid_smiles)
 
     # Check originality against training data
-    training_data = pd.read_csv('./rest/datasets/all_smiles_clean.smi', header=None)
+    
+    training_data = pd.read_csv(config.data_filename, header=None)
     training_set = set(list(training_data[0]))
     original = [smile for smile in valid_smiles if smile not in training_set]
     originality = len(set(original)) / len(set(valid_smiles))

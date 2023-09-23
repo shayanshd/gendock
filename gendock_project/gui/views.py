@@ -10,30 +10,40 @@ from celery.app import default_app
 from .forms import GenerateSmilesForm, ReceptorConfModelForm
 import json
 import ast
+import csv
+
+class DockingMasterTableView(View):
+    def get(self, request, generation_number):
+        with open('./rest/generations/master_results_table_gen' + str(generation_number) + '.csv', 'r') as csvfile:
+            csvreader = csv.DictReader(csvfile)
+            csv_data = list(csvreader)
+        return render(request, 'docking_master_table.html', context={'csv_data': csv_data} )
 
 class DockingProgressView(View):
-    def get(self, request, dock_task_id):
-
+    def get(self, request, dock_task_id, generation_number):
         result = AsyncResult(dock_task_id)
         progress = Progress(result) 
-        percent_complete = int(progress.get_info()['progress']['percent'])
-        
+        percent_complete = int(progress.get_info()['progress']['percent'])      
         current_smile = int(progress.get_info()['progress']['current'])
         total_smile = int(progress.get_info()['progress']['total'])
         print(percent_complete, current_smile, total_smile)
-        context={'dock_task_id':dock_task_id, 'dock_progress':percent_complete, 'dock_current':current_smile, 'dock_total':total_smile}
+        context={'dock_task_id':dock_task_id, 'dock_progress':percent_complete, 'dock_current':current_smile,
+                 'dock_total':total_smile, 'generation_number':generation_number}
         if result.successful():  
-            context = {'dock_task_id': dock_task_id, 'dock_progress':percent_complete}
+            with open('./rest/generations/results/results_gen' + str(generation_number) + '.csv', 'r') as csvfile:
+                csvreader = csv.DictReader(csvfile)
+                csv_data = list(csvreader)
+            context = {'dock_task_id': dock_task_id, 'dock_progress':percent_complete,
+                       'docking_results': csv_data, 'generation_number':generation_number}
         
         return render(request, 'docking_progress.html', context=context)
 
 class DockingView(View):
     def post(self, request):
         # Retrieve the value of hidden_generation_number from POST data
-        generation_number = request.POST.get('hidden_generation_number')
-        print(generation_number)       
+        generation_number = int(request.POST.get('hidden_generation_number'))      
         task = process_nd_worker.delay(generation_number)
-        return render(request, 'docking_progress.html', context={'dock_task_id':task.id, 'dock_progress':0})
+        return render(request, 'docking_progress.html', context={'dock_task_id':task.id, 'dock_progress':0, 'generation_number':generation_number})
     
     def get(self, request):
         # Handle GET requests if needed

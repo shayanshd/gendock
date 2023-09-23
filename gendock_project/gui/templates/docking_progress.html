@@ -1,6 +1,6 @@
-{% if dock_progress != 100 %}
-<div class="container mx-auto" hx-get="{% url 'docking_progress' dock_task_id %}" hx-target="#gen-progress"
-    hx-trigger="load delay:300ms">
+{% if not docking_results %}
+<div class="container mx-auto" hx-get="{% url 'docking_progress' dock_task_id generation_number %}" hx-target="#gen-progress"
+    hx-trigger="every 1s">
     <h1 class="text-3xl font-semibold mb-6">Docking Progress</h1>
 
     <div class="w-full bg-gray-300">
@@ -13,4 +13,31 @@
         <p class="text-lg font-semibold">{{ dock_current }} / {{ dock_total }}</p>
     </div>
 </div>
+{% else %}
+<div  hx-get="{% url 'docking_master_table' generation_number %}" hx-target="#master-table" hx-swap="innerHTML" hx-trigger="load"></div>
+<div class="container mx-auto">
+    <h1 class="text-2xl font-semibold mb-6">Generation {{generation_number}} Scores</h1>
+
+    <div class="bg-white shadow-md rounded my-6">
+        <div class="max-h-80 overflow-y-auto">
+            <table class="min-w-max w-full table-auto">
+                <thead>
+                    <tr class="bg-gray-200 text-gray-600 text-left">
+                        <th class="py-2 px-3">Ligand</th>
+                        <th class="py-2 px-3">Binding Affinity</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-600 text-sm font-light">
+                    {% for row in docking_results %}
+                    <tr class="border-b border-gray-200 hover:bg-gray-100">
+                        <td class="py-2 px-3">{{ row.Ligand }}</td>
+                        <td class="py-2 px-3">{{ row.Binding_Affinity }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 {% endif %}
