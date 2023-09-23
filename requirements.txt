@@ -1,0 +1,8 @@
+bunch==1.0.1
+celery-progress==0.3
+Django==4.2.4
+pandas==2.0.3
+Pillow==10.0.0
+rdkit==2023.3.3
+tqdm==4.66.1
+gunicorn

@@ -1,0 +1,22 @@
+version: '2'
+
+services:
+    server:
+        restart: unless-stopped
+        build:
+            context: .
+            dockerfile: ./Dockerfile
+        entrypoint: /gendock/server-entrypoint.sh
+        expose:
+            - 8000     
+    worker:
+        restart: unless-stopped
+        build:
+            context: .
+            dockerfile: ./Dockerfile
+        entrypoint: /gendock/worker-entrypoint.sh
+    redis:
+        restart: unless-stopped
+        image: redis:7.0.5-alpine 
+        expose:
+            - 6379
