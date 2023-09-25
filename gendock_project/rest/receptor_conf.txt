@@ -1,4 +1,4 @@
-receptor = /home/nextera/nextera/shayan/gendock/gendock_project/receptor_files/6lu7.pdbqt
+receptor = /gendock/receptor_files/6lu7_1qs3lc7.pdbqt
 center_x = -11.49300
 size_x = 30.00000
 center_y = 10.85700

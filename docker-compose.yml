@@ -1,22 +1,72 @@
-version: '2'
+version: '3.8'
 
 services:
-    server:
+    web:
         restart: unless-stopped
-        build:
-            context: .
-            dockerfile: ./Dockerfile
-        entrypoint: /gendock/server-entrypoint.sh
-        expose:
-            - 8000     
-    worker:
-        restart: unless-stopped
-        build:
-            context: .
-            dockerfile: ./Dockerfile
-        entrypoint: /gendock/worker-entrypoint.sh
+        build: ./gendock_project
+        command: python manage.py runserver 0.0.0.0:8000
+        volumes:
+            - ./gendock_project/rest/:/gendock/rest
+            - ./gendock_project/cleaned_smiles/:/gendock/cleaned_smiles
+            - ./gendock_project/uploads/:/gendock/uploads
+        ports:
+            - 8085:8000
+        environment:
+            DJANGO_ALLOWED_HOSTS: "localhost 127.0.0.1 [::1]"
+            DEBUG: "True"
+            CELERY_BROKER_URL: "redis://redis:6379/0"
+            CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+            DJANGO_DB: postgresql
+            POSTGRES_HOST: db
+            POSTGRES_NAME: postgres
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_PORT: 5432
+        depends_on:
+        - redis
     redis:
         restart: unless-stopped
-        image: redis:7.0.5-alpine 
+        image: redis:alpine
+    celery:
+        restart: unless-stopped
+        build: ./gendock_project
+        command: celery -A gendock_project worker -l INFO -P threads
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                      - driver: nvidia
+                        count: 1
+                        capabilities: [gpu]
+        volumes:
+            - ./gendock_project/rest/:/gendock/rest
+            - ./gendock_project/cleaned_smiles/:/gendock/cleaned_smiles
+            - ./gendock_project/uploads/:/gendock/uploads
+        environment:
+            DJANGO_ALLOWED_HOSTS: "localhost 127.0.0.1 [::1]"
+            DEBUG: "True"
+            CELERY_BROKER_URL: "redis://redis:6379/0"
+            CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+            DJANGO_DB: postgresql
+            POSTGRES_HOST: db
+            POSTGRES_NAME: postgres
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_PORT: 5432
+        depends_on:
+            - web
+            - redis
+    db:
+        image: postgres
+        restart: unless-stopped
+        volumes:
+            - postgres_data:/var/lib/postgresql/data/
+        environment:
+            POSTGRES_DB: postgres
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
         expose:
-            - 6379
+            - 5432
+volumes:
+    static_volume: {}
+    postgres_data: {}

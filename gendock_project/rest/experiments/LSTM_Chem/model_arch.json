@@ -1,7 +1,7 @@
 {
   "class_name": "Sequential",
   "config": {
-    "name": "sequential_1",
+    "name": "sequential",
     "layers": [
       {
         "module": "keras.layers",
@@ -15,7 +15,7 @@
           "dtype": "float32",
           "sparse": false,
           "ragged": false,
-          "name": "lstm_2_input"
+          "name": "lstm_input"
         },
         "registered_name": null
       },
@@ -23,7 +23,7 @@
         "module": "keras.layers",
         "class_name": "LSTM",
         "config": {
-          "name": "lstm_2",
+          "name": "lstm",
           "trainable": true,
           "dtype": "float32",
           "batch_input_shape": [
@@ -91,7 +91,7 @@
         "module": "keras.layers",
         "class_name": "LSTM",
         "config": {
-          "name": "lstm_3",
+          "name": "lstm_1",
           "trainable": true,
           "dtype": "float32",
           "batch_input_shape": [
@@ -159,7 +159,7 @@
         "module": "keras.layers",
         "class_name": "Dense",
         "config": {
-          "name": "dense_1",
+          "name": "dense",
           "trainable": true,
           "dtype": "float32",
           "units": 47,

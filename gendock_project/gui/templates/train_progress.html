@@ -6,7 +6,7 @@
 
 {% if progress.task_status != 'C' %}
 <div class="relative pt-1" hx-get="{% url 'train_progress' task_id %}" hx-target="#mytarget"
-    hx-trigger="load delay:300ms">
+    hx-trigger="load delay:1s">
     {% if progress.task_status == 'F' %}
     <h1 class="text-3xl font-semibold mb-6 text-red-600">Stopping the training session, Saving weights ...</h1>
     {% else %}
