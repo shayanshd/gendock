@@ -47,8 +47,8 @@ class TrainLog(models.Model):
     task_id = models.CharField(max_length=50, unique=True)
     epoch = models.IntegerField(default=0)
     max_epoch = models.IntegerField(null=True)
-    train_loss = models.CharField(max_length=20, null=True)
-    val_loss = models.CharField(max_length=20, null=True)
+    train_loss = models.CharField(max_length=5000, null=True)
+    val_loss = models.CharField(max_length=5000, null=True)
     cur_batch = models.IntegerField(default=0)
     max_batch = models.IntegerField(default=1)
 

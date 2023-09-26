@@ -9,6 +9,7 @@ services:
             - ./gendock_project/rest/:/gendock/rest
             - ./gendock_project/cleaned_smiles/:/gendock/cleaned_smiles
             - ./gendock_project/uploads/:/gendock/uploads
+            - ./gendock_project/uploads/:/gendock/receptor_files
         ports:
             - 8085:8000
         environment:
@@ -42,6 +43,7 @@ services:
             - ./gendock_project/rest/:/gendock/rest
             - ./gendock_project/cleaned_smiles/:/gendock/cleaned_smiles
             - ./gendock_project/uploads/:/gendock/uploads
+            - ./gendock_project/uploads/:/gendock/receptor_files
         environment:
             DJANGO_ALLOWED_HOSTS: "localhost 127.0.0.1 [::1]"
             DEBUG: "True"

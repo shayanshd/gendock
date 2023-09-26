@@ -7,3 +7,5 @@ rdkit==2023.3.3
 tqdm==4.66.1
 gunicorn
 redis
+psycopg2-binary
+celery[redis]
