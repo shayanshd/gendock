@@ -1,7 +1,7 @@
 # csv_processor/views.py
 from django.shortcuts import render, redirect
 from django.views import View
-from .models import UploadedCSV, CleanedSmile, TrainLog, ReceptorConfiguration
+from .models import UploadedCSV, CleanedSmile, TrainLog, ReceptorConfiguration, GenerateLog, DockingLog
 from .tasks import process_csv_task, start_training, generate_smiles, process_nd_worker, generate_more_smiles
 from celery.result import AsyncResult
 from celery_progress.backend import Progress
@@ -37,6 +37,15 @@ class DockingProgressView(View):
                        'docking_results': csv_data, 'generation_number':generation_number}
         
         return render(request, 'docking_progress.html', context=context)
+    
+    def post(self, request, dock_task_id, generation_number):
+        dock_task = DockingLog.objects.get(task_id = dock_task_id)
+        dock_task.task_status = 'F'
+        dock_task.save()
+        form = ReceptorConfModelForm()         
+        context = {'task_id': dock_task_id, 'validity': 999, 'form':form}
+        
+        return render(request, 'generate_progress.html', context=context)
 
 class DockingView(View):
     def post(self, request):
@@ -66,7 +75,6 @@ class GenerateProgressView(View):
         
         return render(request, 'generate_progress.html', context=context)
     def post(self, request, task_id):
-        
         form = ReceptorConfModelForm(request.POST, request.FILES)
         # print(request.POST, request.FILES)
         
@@ -95,7 +103,12 @@ class GenerateProgressView(View):
             return HttpResponse('<p class="text-green-500 mt-2">Receptor Configuration Updated.</p>')
         else:
             print(form.errors)
-            return HttpResponse('Something went wrong')
+            generate_task = GenerateLog.objects.get(task_id = task_id)
+            generate_task.task_status = 'F'
+            generate_task.save()
+            return HttpResponse('Something went wrong, Generation process stopped.')
+            
+
         # return render(request, 'generate_rec_submit.html', context={'form':form})
 
 class GenerateSmilesView(View):
@@ -196,7 +209,11 @@ class GetProgress(View):
         return render(request, 'process_csv.html',context=context)
     
     def post(self, request, task_id):
-        default_app.control.revoke(task_id, terminate=True, signal='SIGKILL')
+        print(request.POST)
+        cleaned_smi = CleanedSmile.objects.get(task_id=task_id)
+        cleaned_smi.task_status = 'F'
+        cleaned_smi.save()
+        # default_app.control.revoke(task_id, terminate=True, signal='SIGKILL')
         return HttpResponse('Stopped')
 
 class ProcessCSVView(View):

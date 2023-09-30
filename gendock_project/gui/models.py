@@ -80,3 +80,23 @@ class ReceptorConfiguration(models.Model):
                 os.remove(self.receptor_file.path)
             except:
                 print('csv file not found')
+
+class GenerateLog(models.Model):
+    task_id = models.CharField(max_length=50, unique=True)
+    TASK_STATUS_CHOICES = (
+    ('P', 'Processing'),
+    ('C', 'Completed'),
+    ('F', 'Failed'),
+    ('N', 'Not Started')
+    )
+    task_status = models.CharField(max_length=1, choices=TASK_STATUS_CHOICES, default='N')
+
+class DockingLog(models.Model):
+    task_id = models.CharField(max_length=50, unique=True)
+    TASK_STATUS_CHOICES = (
+    ('P', 'Processing'),
+    ('C', 'Completed'),
+    ('F', 'Failed'),
+    ('N', 'Not Started')
+    )
+    task_status = models.CharField(max_length=1, choices=TASK_STATUS_CHOICES, default='N')

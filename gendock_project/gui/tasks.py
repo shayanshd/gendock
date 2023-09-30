@@ -5,7 +5,7 @@ from rdkit import Chem, RDLogger
 from rdkit.Chem import MolStandardize, Descriptors, PropertyMol
 from celery import shared_task
 from celery_progress.backend import ProgressRecorder
-from .models import UploadedCSV, CleanedSmile, TrainLog, ReceptorConfiguration
+from .models import UploadedCSV, CleanedSmile, TrainLog, ReceptorConfiguration, GenerateLog, DockingLog
 from rest.lstm_chem.utils.config import process_config
 from rest.lstm_chem.data_loader import DataLoader
 from rest.lstm_chem.model import LSTMChem
@@ -26,7 +26,8 @@ RDLogger.DisableLog('rdApp.*')
 def generate_more_smiles(self, global_generation, sample_number, desired_length):
 
     progress_recorder = ProgressRecorder(self)
-
+    generate_log = GenerateLog.objects.create(task_id = self.request.id, task_status = 'P')
+    generate_log.save()
     print('Starting process for generation ' + str(global_generation))
     new_table = pd.read_csv('./rest/generations/master_results_table_gen' + str(global_generation - 1) + '.csv', sep=',')
 
@@ -68,7 +69,7 @@ def generate_more_smiles(self, global_generation, sample_number, desired_length)
     modeler = LSTMChem(config, session='generate')
     generator = LSTMChemGenerator(modeler)
 
-    base_generated = generator.sample(progress_recorder, num=20)
+    base_generated = generator.sample(progress_recorder, self.request.id, num=20)
 
     base_generated_mols = GenProcess.validate_mols(base_generated)
     base_generated_smiles = GenProcess.convert_mols_to_smiles(base_generated_mols)
@@ -117,7 +118,7 @@ def generate_more_smiles(self, global_generation, sample_number, desired_length)
     generator = LSTMChemGenerator(modeler)
 
     sample_number = sample_number
-    sampled_smiles = generator.sample(progress_recorder, num=sample_number)
+    sampled_smiles = generator.sample(progress_recorder, self.request.id, num=sample_number)
 
     valid_mols = []
     for smi in sampled_smiles:
@@ -181,6 +182,8 @@ def generate_more_smiles(self, global_generation, sample_number, desired_length)
 
 @shared_task(bind=True)
 def process_nd_worker(self, global_generation):
+    dock_log = DockingLog.objects.create(task_id = self.request.id, task_status = 'P')
+    dock_log.save()
     df = pd.read_csv('rest/checklist.csv')
     vina_address = os.getcwd() + '/' + str(df['Address'].loc[df['Product'].str.contains('Vina', case=False)].values[0])
     mgl_address = os.getcwd() + '/' +str(df['Address'].loc[df['Product'].str.contains('MGL', case=False)].values[0])
@@ -230,6 +233,9 @@ def process_nd_worker(self, global_generation):
     counter = len(glob.glob1(workingdir, "*.pdbqt"))
     print('Total number of smiles to dock: ' + str(counter))
     for i in range(counter):
+        dk_task = DockingLog.objects.get(task_id = self.request.id)
+        if dk_task.task_status == 'F':
+            return 'STOPPED'
         dock_command = fr'(cd {workingdir} && "{VINA_PATH}/vina" --ligand mysm{i + 1}.pdbqt ' \
                     f'--config {CONFIG_PATH} --log mysm{i + 1}.log)'
         os.system(dock_command)
@@ -292,12 +298,14 @@ def generate_smiles(self, sample_number, desired_length):
     CONFIG_FILE = 'rest/experiments/LSTM_Chem/config.json'
     config = process_config(CONFIG_FILE)
 
+    generate_log = GenerateLog.objects.create(task_id = self.request.id, task_status = 'P')
+    generate_log.save()
     # Initialize the modeler and generator
     modeler = LSTMChem(config, session='generate')
     generator = LSTMChemGenerator(modeler)
     progress_recorder = ProgressRecorder(self)
     # Sample smiles
-    sampled_smiles = generator.sample(progress_recorder,num=sample_number)
+    sampled_smiles = generator.sample(progress_recorder, self.request.id, num=sample_number)
 
     # Save sampled smiles to a file
     with open('./rest/generations/gen0notvalid.smi', 'w') as f:
@@ -413,7 +421,7 @@ def process_csv_task(self, pk_list):
         cs_chk = None
     if cs_chk:
         cs_chk.delete()
-    cs = CleanedSmile.objects.create(cleaned_file = cleaned_smiles_file, task_id = self.request.id)
+    cs = CleanedSmile.objects.create(cleaned_file = cleaned_smiles_file, task_id = self.request.id, task_status = 'P')
     for csv_file in uploaded_csv:
         cs.csv_file.add(csv_file)
     cs.save()
@@ -463,6 +471,9 @@ def process_csv_task(self, pk_list):
     cl_smiles = []
 
     for i, smi in enumerate(total_smiles):
+        cl_task = CleanedSmile.objects.get(task_id = self.request.id)
+        if cl_task.task_status == 'F':
+            return 'STOPPED'
         cl_smi = process(smi)
         if cl_smi:
             cl_smiles.append(cl_smi)

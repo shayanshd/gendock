@@ -34,11 +34,13 @@
                 </li>
                 {% endfor %}
             </ul>
+            {% if uploaded_csv_list is not None %}
             <div class="flex mt-4" id="buttons-section" style="display: none;">
                 <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-lg mr-4">Process Selected</button>
                 <button class="px-4 py-2 bg-red-500 text-white rounded-lg" hx-post="{% url 'upload' %}"
                     hx-target="#selected-csvs">Delete Selected</button>
             </div>
+            {% endif %}
         </form>
         <script>
             const checkboxes = document.querySelectorAll('input[type="checkbox"]');

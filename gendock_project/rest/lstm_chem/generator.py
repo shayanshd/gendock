@@ -2,7 +2,7 @@ from tqdm import tqdm
 import numpy as np
 from rest.lstm_chem.utils.smiles_tokenizer2 import SmilesTokenizer
 from celery_progress.backend import ProgressRecorder
-
+from gui.models import GenerateLog
 
 class LSTMChemGenerator(object):
     def __init__(self, modeler):
@@ -27,10 +27,13 @@ class LSTMChemGenerator(object):
         streched_probs = np.exp(streched) / np.sum(np.exp(streched))
         return np.random.choice(range(len(streched)), p=streched_probs)
 
-    def sample(self,progress_recorder, num=1, start='G'):
+    def sample(self, progress_recorder, task_id, num=1, start='G'):
         sampled = []
         if self.session == 'generate':
             for i in tqdm(range(num)):
+                gl = GenerateLog.objects.get(task_id = task_id)
+                if gl.task_status == 'F':
+                    return sampled
                 progress_recorder.set_progress(i + 1, num)
                 sampled.append(self._generate(start))
             return sampled

@@ -12,25 +12,25 @@
 # Please see http://vina.scripps.edu for more information.      #
 #################################################################
 
-Output will be mysm1_out.pdbqt
+Output will be mysm6_out.pdbqt
 Detected 8 CPUs
 Reading input ... done.
 Setting up the scoring function ... done.
 Analyzing the binding site ... done.
-Using random seed: 1138267431
+Using random seed: -64808564
 Performing search ... done.
 Refining results ... done.
 
 mode |   affinity | dist from best mode
      | (kcal/mol) | rmsd l.b.| rmsd u.b.
 -----+------------+----------+----------
-   1         -0.0      0.000      0.000
-   2         -0.0     11.280     15.849
-   3         -0.0     11.542     15.169
-   4         -0.0     12.886     15.317
-   5         -0.0      7.411      8.266
-   6         -0.0      9.154     15.154
-   7          0.0     10.115     14.035
-   8          0.0      7.842     12.904
-   9          0.0     11.255     15.632
+   1          0.0      0.000      0.000
+   2          0.0     10.865     12.305
+   3          0.0     15.545     17.332
+   4          0.0      5.038      7.291
+   5          0.0      5.559      7.562
+   6          0.0     10.568     12.368
+   7          0.0      7.705      9.170
+   8          0.0     11.747     13.432
+   9          0.0      8.806     10.847
 Writing output ... done.

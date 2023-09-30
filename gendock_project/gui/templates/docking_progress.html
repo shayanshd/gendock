@@ -12,6 +12,8 @@
     <div class="mt-4 text-center">
         <p class="text-lg font-semibold">{{ dock_current }} / {{ dock_total }}</p>
     </div>
+    <button id="cancel-task" class="px-4 py-2 bg-red-500 text-white rounded-lg"
+    hx-post="{% url 'docking_progress' dock_task_id generation_number %}" hx-target="#gen-progress">Cancel Task</button>
 </div>
 {% else %}
 <div  hx-get="{% url 'docking_master_table' generation_number %}" hx-target="#master-table" hx-swap="innerHTML" hx-trigger="load"></div>

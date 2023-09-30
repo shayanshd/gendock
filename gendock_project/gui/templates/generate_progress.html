@@ -12,9 +12,12 @@
     <div class="mt-4 text-center">
         <p class="text-lg font-semibold">{{ current }} / {{ total }}</p>
     </div>
+    <button id="cancel-task" class="px-4 py-2 bg-red-500 text-white rounded-lg"
+    hx-post="{% url 'generate_progress' task_id %}" hx-target="#gen-progress">Cancel Task</button>
 </div>
 {% else %}
 <div class="container mx-auto">
+    {% if originality %}
     <h1 class="text-3xl font-semibold mb-6">Generation result on {{ total }} smiles:</h1>
 
     <!-- Display validity, uniqueness, and originality here -->
@@ -26,6 +29,7 @@
     <div id="recept-resp" class="mb-6">
         <div id="validation-message" class="text-red-500 mt-2"></div>
     </div>
+    {% endif %}
     {% if validity != 0 %}
     <!-- Add buttons for Configure Receptor and Start Docking -->
     <div class="mb-6 flex">

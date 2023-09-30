@@ -1,6 +1,6 @@
 {
   "exp_name": "LSTM_Chem",
-  "data_filename": "./cleaned_smiles/2_clean.smi",
+  "data_filename": "./cleaned_smiles/6_clean.smi",
   "data_length": 0,
   "units": 256,
   "num_epochs": 3,
