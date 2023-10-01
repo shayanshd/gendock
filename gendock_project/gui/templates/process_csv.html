@@ -11,7 +11,7 @@
 <body class="bg-gray-100">
 
     <div class="relative pt-1" hx-get="{% url 'get_progress' task_id %}" hx-target="#selected-csvs"
-        hx-trigger="load delay:300ms">
+        hx-trigger="load delay:1s">
         <div class="flex mb-2 items-center justify-between">
             <div>
                 <span
@@ -26,9 +26,9 @@
             </div>
         </div>
         <div class="mb-6 h-1 w-full bg-neutral-200 dark:bg-neutral-600">
-            <div id="progress-bar" class="h-1 bg-green-500" style="width: {{value}}%;"></div>
+            <div id="progress-bar" class="h-1 bg-orange-500" style="width: {{value}}%;"></div>
         </div>
-        <button id="cancel-task" class="px-4 py-2 bg-red-500 text-white rounded-lg"
+        <button id="cancel-task" class="px-4 py-2 bg-orange-400 text-white rounded-lg"
             hx-post="{% url 'get_progress' task_id %}" hx-target="#selected-csvs">Cancel Task</button>
     </div>
 

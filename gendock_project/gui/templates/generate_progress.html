@@ -4,7 +4,7 @@
     <h1 class="text-3xl font-semibold mb-6">Generate Progress</h1>
 
     <div class="w-full bg-gray-300">
-        <div class="relative w-full bg-green-500 text-center py-2 text-white" style="width: {{ progress }}%;">
+        <div class="relative w-full bg-orange-500 text-center py-2 text-white" style="width: {{ progress }}%;">
             <span class="text-xs font-semibold">{{ progress }}%</span>
         </div>
     </div>
@@ -34,7 +34,7 @@
     <!-- Add buttons for Configure Receptor and Start Docking -->
     <div class="mb-6 flex">
         <button id="configure-receptor-btn"
-            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Configure Receptor</button>
+            class="px-4 py-2 bg-orange-400 text-white rounded-lg hover:bg-orange-500">Configure Receptor</button>
         <form method="post" action="" hx-post="{% url 'start_docking' %}" hx-target="#gen-progress">
             {% csrf_token %}
 
@@ -43,7 +43,7 @@
 
             <!-- Start Docking Button -->
             <button name="start_docking" type="submit" id="start_docking"
-                class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 ml-4">
+                class="px-4 py-2 bg-sky-400 text-white rounded-lg hover:bg-sky-500 ml-4">
                 Start Docking
             </button>
 
@@ -106,7 +106,7 @@
                 <!-- Modal Action Buttons -->
                 <div class="flex justify-end">
                     <button name="submit_conf" id="done-configure-receptor" type="submit"
-                        class="px-4 py-2 bg-green-500 text-white rounded-lg mr-4">
+                        class="px-4 py-2 bg-sky-400 text-white rounded-lg mr-4">
                         Done
                     </button>
                 </div>

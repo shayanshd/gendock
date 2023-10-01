@@ -13,7 +13,7 @@
             <div class="flex items-center">
                 <input type="file" name="csv_file" class="py-2 px-4 border rounded-lg mr-4" accept=".csv"
                     id="csv-file-input">
-                <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg">Upload CSV</button>
+                <button type="submit" class="bg-orange-400 text-white px-6 py-2 rounded-lg">Upload CSV</button>
             </div>
         </form>
         {% if error_message %}
@@ -36,8 +36,8 @@
             </ul>
             {% if uploaded_csv_list is not None %}
             <div class="flex mt-4" id="buttons-section" style="display: none;">
-                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-lg mr-4">Process Selected</button>
-                <button class="px-4 py-2 bg-red-500 text-white rounded-lg" hx-post="{% url 'upload' %}"
+                <button type="submit" class="px-4 py-2 bg-sky-400 text-white rounded-lg mr-4">Process Selected</button>
+                <button class="px-4 py-2 bg-orange-400 text-white rounded-lg" hx-post="{% url 'upload' %}"
                     hx-target="#selected-csvs">Delete Selected</button>
             </div>
             {% endif %}

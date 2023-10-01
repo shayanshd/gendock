@@ -43,7 +43,7 @@
         </div>
     </div>
     <div class="mb-6 h-2 w-full bg-neutral-200 dark:bg-neutral-600">
-        <div id="progress-bar-value" class="h-2 bg-green-500" style="width: {{ value }}%;"></div>
+        <div id="progress-bar-value" class="h-2 bg-orange-500" style="width: {{ value }}%;"></div>
     </div>
     <div class="flex mb-2 items-center justify-between">
         <div>
@@ -58,11 +58,11 @@
         </div>
     </div>
     <div class="mb-6 h-1 w-full bg-neutral-200 dark:bg-neutral-600">
-        <div id="progress-bar-batch" class="h-1 bg-blue-500" style="width: {{ batch_value }}%;"></div>
+        <div id="progress-bar-batch" class="h-1 bg-sky-500" style="width: {{ batch_value }}%;"></div>
     </div>
     <form id="cancel-form" hx-post="{% url 'train_progress' task_id %}" hx-target="#mytarget" hx-swap="innerHTML">
         {% csrf_token %}
-        <button id="cancel-task" class="px-4 py-2 bg-red-500 text-white rounded-lg">Cancel Task</button>
+        <button id="cancel-task" class="px-4 py-2 bg-orange-400 text-white rounded-lg">Cancel Task</button>
     </form>
 </div>
 {% else %}
