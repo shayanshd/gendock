@@ -144,8 +144,18 @@ STATIC_ROOT = BASE_DIR / "django_static"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CELERY_BROKER_URL = "redis://redis:6379"
-CELERY_RESULT_BACKEND = "redis://redis:6379"
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+if os.environ.get("CELERY_BROKER_URL") is not None:
+    try:
+        CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL").split(",")
+    except Exception as e:
+        print("Cant set CELERY_BROKER_URL, using default instead")
+if os.environ.get("CELERY_RESULT_BACKEND") is not None:
+    try:
+        CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND").split(",")
+    except Exception as e:
+        print("Cant set CELERY_RESULT_BACKEND, using default instead")
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_WORKER_DAEMON = False
