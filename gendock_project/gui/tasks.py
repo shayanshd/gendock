@@ -182,9 +182,10 @@ def generate_more_smiles(self, global_generation, sample_number, desired_length)
 
 @shared_task(bind=True)
 def process_nd_worker(self, global_generation):
-    print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&77')
-    print(global_generation)
-    print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&77')
+    if not os.path.isdir('./rest/generations/results'):
+        os.mkdir('./rest/generations/results')
+    if not os.path.isdir('./rest/generations/training'):
+        os.mkdir('./rest/generations/training')
     dock_log = DockingLog.objects.create(task_id = self.request.id, task_status = 'P')
     dock_log.save()
     df = pd.read_csv('rest/checklist.csv')
