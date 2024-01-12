@@ -1,0 +1,48 @@
+<!-- csv_processor/templates/instructions.html -->
+{% extends 'base.html' %}
+
+{% block title %}Instructions{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <h2 class="text-2xl font-bold mb-4">Application Instructions</h2>
+
+    <!-- Upload Section -->
+    <section class="mt-6">
+        <h3 class="text-lg font-semibold">Upload</h3>
+        <ul class="list-disc list-inside">
+            <li>Select a CSV dataset for uploading.</li>
+            <li>Ability to upload multiple CSV files simultaneously. Each file will appear under the "Uploaded CSV File" section.</li>
+            <li>Ensure each CSV file contains a 'smiles' column in lowercase.</li>
+            <li>Select multiple datasets as needed for combination and processing. Selected datasets will be prepared for cleaning, followed by training.</li>
+            <li>Option available to cancel the cleaning process at any stage.</li>
+        </ul>
+    </section>
+
+    <!-- Train Section -->
+    <section class="mt-6">
+        <h3 class="text-lg font-semibold">Train</h3>
+        <ul class="list-disc list-inside">
+            <li>Displays all datasets that have undergone cleaning.</li>
+            <li>Choose a dataset for model training.</li>
+            <li>Specify the number of epochs for the training process.</li>
+            <li>Option to interrupt and cancel the training process if needed.</li>
+            <li>Training weights will be saved automatically upon cancellation or completion.</li>
+        </ul>
+    </section>
+
+    <!-- Generate Section -->
+    <section class="mt-6">
+        <h3 class="text-lg font-semibold">Generate</h3>
+        <ul class="list-disc list-inside">
+            <li>Input the number of compounds you wish to generate.</li>
+            <li>Specify the desired length for the number of smiles used in docking.</li>
+            <li>Ensure the sample number is greater than the desired length; neither can be less than 3.</li>
+            <li>Once the initial generation is complete and the validity of compounds is confirmed, you can proceed with the docking process.</li>
+            <li>Prior to docking, configure the receptor: choose a Receptor pdbqt file and set the Center and Size for X, Y, and Z axes.</li>
+            <li>Initiate the docking process, keeping an eye on the generation number.</li>
+            <li>Upon completion of docking, two tables will be presented: one for the current generation results and another for all generations.</li>
+        </ul>
+    </section>
+</div>
+{% endblock %}

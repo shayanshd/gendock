@@ -12,6 +12,9 @@ import json
 import ast
 import csv
 
+def instructions_view(request):
+    return render(request, 'instructions.html')
+
 class DockingMasterTableView(View):
     def get(self, request, generation_number):
         with open('./rest/generations/master_results_table_gen' + str(generation_number) + '.csv', 'r') as csvfile:
