@@ -182,6 +182,9 @@ def generate_more_smiles(self, global_generation, sample_number, desired_length)
 
 @shared_task(bind=True)
 def process_nd_worker(self, global_generation):
+    print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&77')
+    print(global_generation)
+    print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&77')
     dock_log = DockingLog.objects.create(task_id = self.request.id, task_status = 'P')
     dock_log.save()
     df = pd.read_csv('rest/checklist.csv')
@@ -274,10 +277,10 @@ def process_nd_worker(self, global_generation):
 
     new_scores = pd.read_csv('./rest/generations/results/results_gen' + str(global_generation) + '.csv', sep=',')
     new_scores = new_scores.groupby("Ligand").min()["Binding_Affinity"].reset_index()
-    new_scores['id'] = new_scores['Ligand'].str.split("_").str[1].str.split("gen").str[0].str.split("id").str[1]
-    new_scores['gen'] = new_scores['Ligand'].str.split("_").str[1].str.split("gen").str[1]
-    new_scores['score'] = new_scores["Binding_Affinity"]
-    new_scores = new_scores[['id', 'gen', 'score']]
+    new_scores["id"] = new_scores["Ligand"].str.split("_").str[-1].str.split("gen").str[0].str.split("id").str[-1]
+    new_scores["gen"] = new_scores["Ligand"].str.split("_").str[-1].str.split("gen").str[-1]
+    new_scores["score"] = new_scores["Binding_Affinity"]
+    new_scores = new_scores[["id", "gen", "score"]]
     new_scores.id = new_scores.id.astype(str)
     new_scores.gen = new_scores.gen.astype(int)
     master_table.id = master_table.id.astype(str)
