@@ -13,7 +13,7 @@ services:
         ports:
             - 8085:8000
         environment:
-            ALLOWED_HOSTS: "localhost,0.0.0.0,http://94.182.46.219:8081/"
+            ALLOWED_HOSTS: "localhost,0.0.0.0,94.182.46.219,192.168.88.183"
             DEBUG: "True"
             CELERY_BROKER_URL: "redis://redis:6379/0"
             CELERY_RESULT_BACKEND: "redis://redis:6379/0"
@@ -45,7 +45,7 @@ services:
             - ./gendock_project/uploads/:/gendock/uploads
             - ./gendock_project/uploads/:/gendock/receptor_files
         environment:
-            ALLOWED_HOSTS: "localhost,0.0.0.0,http://94.182.46.219:8081/"
+            ALLOWED_HOSTS: "localhost,0.0.0.0,94.182.46.219,192.168.88.183"
             DEBUG: "True"
             CELERY_BROKER_URL: "redis://redis:6379/0"
             CELERY_RESULT_BACKEND: "redis://redis:6379/0"
