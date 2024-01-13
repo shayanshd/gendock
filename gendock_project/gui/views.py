@@ -11,6 +11,45 @@ from .forms import GenerateSmilesForm, ReceptorConfModelForm
 import json
 import ast
 import csv
+import os
+import shutil
+
+def reset_view(request):
+    return render(request, 'reset.html')
+
+def reset_action(request):
+    # if os.path.isdir('./cleaned_smiles'):
+    #     shutil.rmtree('./cleaned_smiles')
+    #     os.mkdir('./cleaned_smiles')
+    if os.path.isdir('./rest/babeltest'):
+        shutil.rmtree('./rest/babeltest')
+        os.mkdir('./rest/babeltest')
+    if os.path.isdir('./rest/experiments/LSTM_Chem/checkpoints'):
+        shutil.rmtree('./rest/experiments/LSTM_Chem/checkpoints')
+        os.mkdir('./rest/experiments/LSTM_Chem/checkpoints')
+        shutil.copyfile('./rest/backup/LSTM_Chem-baseline-model-full.hdf5',
+                         './rest/experiments/LSTM_Chem/checkpoints/LSTM_Chem-baseline-model-full.hdf5')
+    if os.path.isdir('./rest/experiments/LSTM_Chem/logs/train'):
+        shutil.rmtree('./rest/experiments/LSTM_Chem/logs/train')
+        os.mkdir('./rest/experiments/LSTM_Chem/logs/train')
+    if os.path.isdir('./rest/experiments/LSTM_Chem/logs/validation'):
+        shutil.rmtree('./rest/experiments/LSTM_Chem/logs/validation')
+        os.mkdir('./rest/experiments/LSTM_Chem/logs/validation')    
+    if os.path.isdir('./rest/experiments/LSTM_Chem/rest/checkpoints'):
+        shutil.rmtree('./rest/experiments/LSTM_Chem/rest/checkpoints')
+        os.mkdir('./rest/experiments/LSTM_Chem/rest/checkpoints')
+    if os.path.isdir('./rest/generations'):
+        shutil.rmtree('./rest/generations')
+        os.mkdir('./rest/generations')    
+        os.mkdir('./rest/generations/results') 
+        os.mkdir('./rest/generations/training') 
+    # if os.path.isdir('./uploads'):
+    #     shutil.rmtree('./uploads')
+    #     os.mkdir('./uploads')
+    if os.path.exists('./rest/all_smiles.csv'):
+        os.remove('./rest/all_smiles.csv')
+
+    return redirect('upload')
 
 def instructions_view(request):
     return render(request, 'instructions.html')

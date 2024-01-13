@@ -1,4 +1,4 @@
-receptor = /gendock/receptor_files/6lu7_GC7jV27.pdbqt
+receptor = /gendock/receptor_files/6lu7.pdbqt
 center_x = -11.50000
 size_x = 30.00000
 center_y = 11.00000

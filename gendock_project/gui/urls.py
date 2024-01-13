@@ -14,4 +14,6 @@ urlpatterns = [
     path('docking-progress/<str:dock_task_id>/<int:generation_number>', DockingProgressView.as_view(), name='docking_progress'),
     path('docking-master-table/<int:generation_number>', DockingMasterTableView.as_view(), name='docking_master_table'),
     path('instructions/', instructions_view, name='instructions'),
+    path('reset/', reset_view, name='reset'),
+    path('reset_action/', reset_action, name='reset_action'),
 ]
